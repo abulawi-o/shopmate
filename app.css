@@ -214,3 +214,4 @@ nav.side.drawer .links{margin-bottom:12px}
   nav.side.drawer.admdrawer .x{display:none}
   nav.side.drawer.admdrawer .note{display:block}
 }
+nav.side .brand2::before{width:34px;height:34px;border-radius:0;background:url(mark.svg) center/contain no-repeat}
