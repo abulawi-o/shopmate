@@ -96,6 +96,7 @@ function clientCard(sh) {
   const closeBtn = k => sh['pkg_' + k] ? `<button class="btn ${sh['closed_' + k] ? '' : 'danger'} mini" data-a="close" data-id="${sh.id}" data-k="${k}">${sh['closed_' + k] ? 'Reopen ' : 'Close '}${k === 'site' ? 'website' : 'AI'}</button>` : '';
   const open = S.openId === sh.id;
   const manage = open ? `<div class="manage">
+    <div class="mg"><h5>Business name</h5><input type="text" data-nm="${sh.id}" value="${esc(sh.name || '')}" placeholder="shop name" maxlength="80" autocomplete="off"><small>Shown on their website and in their owner space.</small></div>
     <div class="mg"><h5>Website address</h5><input type="text" data-dom="${sh.id}" value="${esc(sh.domain || '')}" placeholder="his website address, e.g. hiscuts.ca" maxlength="100" autocomplete="off"><small>${siteLinks(sh)}</small></div>
     <div class="mg"><h5>Next payment due</h5><input type="date" data-due="${sh.id}" value="${esc(sh.due_date || '')}"></div>
     <div class="mg"><h5>Owner password</h5><div class="row" style="gap:6px"><input type="text" data-rpw="${sh.id}" placeholder="new password (optional)" maxlength="100" autocomplete="off"><button class="btn ghost mini" data-a="reset" data-id="${sh.id}">Set password</button></div></div>
@@ -184,6 +185,13 @@ document.addEventListener('change', async ev => {
     const { error } = await sb.from('shops').update({ domain: v || null }).eq('id', t.dataset.dom);
     if (error) { S.err = error.message.includes('unique') || error.message.includes('duplicate') ? 'Another client already uses that address.' : error.message; return render(); }
     await audit(t.dataset.dom, 'set website address ' + (v || '(none)')); S.err = ''; await load(); return render();
+  }
+  if (t.dataset && t.dataset.nm) {
+    const v = t.value.trim();
+    if (!v) { S.err = 'The business name cannot be empty.'; return render(); }
+    const { error } = await sb.from('shops').update({ name: v }).eq('id', t.dataset.nm);
+    if (error) { S.err = error.message; return render(); }
+    await audit(t.dataset.nm, 'renamed business to ' + v); S.err = ''; await load(); return render();
   }
   if (t.dataset && t.dataset.due) { await patch(t.dataset.due, { due_date: t.value || null }, 'changed due date'); render(); }
 });
