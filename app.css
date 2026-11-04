@@ -191,3 +191,26 @@ nav.side.drawer .out{position:sticky;bottom:0;background:var(--nav);margin-top:a
 nav.side.drawer .note{margin-top:14px}
 nav.side.drawer .links{margin-bottom:12px}
 @media(max-height:780px){nav.side.drawer .note{display:none}}
+
+/* platform admin: sidebar on wide screens, hamburger drawer on small ones */
+.admshell{display:grid;grid-template-columns:minmax(0,1fr)}
+.admshell .main{max-width:1180px}
+.tag.off{background:var(--soft);color:var(--muted);font-weight:600}
+.cls2{display:grid;gap:14px}
+.cl{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(20,28,70,.04)}
+.cl .clh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.cl .clh b{font-size:17px;display:block}
+.cl small{color:var(--muted);display:block;overflow-wrap:anywhere}
+.cl .tags{display:flex;gap:6px;flex-wrap:wrap}
+.cl .cls{display:flex;gap:6px 22px;flex-wrap:wrap}
+.manage{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;padding-top:12px;border-top:1px solid var(--line)}
+.manage h5{margin:0 0 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.manage input{min-height:38px;font-size:14px;width:100%;max-width:340px}
+.manage .row input{flex:1;min-width:140px}
+@media(min-width:900px){
+  .admshell{grid-template-columns:262px minmax(0,1fr)}
+  .admbar,.admshell .scrim{display:none}
+  nav.side.drawer.admdrawer{position:sticky;top:0;left:auto;transform:none;visibility:visible;height:100vh;width:auto;box-shadow:none;transition:none;z-index:1}
+  nav.side.drawer.admdrawer .x{display:none}
+  nav.side.drawer.admdrawer .note{display:block}
+}
