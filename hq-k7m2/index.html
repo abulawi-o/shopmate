@@ -26,7 +26,7 @@ const sb = supabase.createClient(LEO.url, LEO.key, { auth: { storage: authStore,
 const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const today = () => iso(new Date());
 const plusMonth = s => { const d = s ? new Date(s + 'T00:00:00') : new Date(); d.setMonth(d.getMonth() + 1); return iso(d); };
-const S = { user: null, shops: [], logins: {}, audit: [], err: '', msg: '', reveal: null, loginErr: '', busy: false, filter: '', em: '' };
+const S = { user: null, shops: [], logins: {}, audit: [], err: '', msg: '', reveal: null, loginErr: '', busy: false, filter: '', em: '', eng: null };
 S.remember = !!lsGet('leo_email'); S.keep = lsGet('leo_keep') !== '0'; if (S.remember) S.em = lsGet('leo_email') || '';
 
 async function load() {
@@ -36,6 +36,7 @@ async function load() {
     sb.from('admin_audit').select('*').order('at', { ascending: false }).limit(25)
   ]);
   S.shops = sh.data || []; S.audit = au.data || [];
+  try { const es = await sb.rpc('engine_status'); S.eng = es.error ? null : es.data; } catch (e) { S.eng = null; }
   S.logins = {}; (pr.data || []).forEach(p => { S.logins[p.shop_id] = p.last_login; });
   if (sh.error) S.err = sh.error.message;
 }
@@ -50,6 +51,22 @@ async function fnErr(data, error) { if (data && data.error) return data.error; t
 const audit = (shop_id, action) => sb.from('admin_audit').insert({ shop_id, admin_id: S.user.id, action });
 const nice = s => s ? new Date(s + 'T00:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 const dueTag = sh => { if (!sh.due_date) return ''; const d = Math.round((new Date(sh.due_date + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 86400000); return d < 0 ? `<span class="tag bad">${-d} day${d === -1 ? '' : 's'} overdue</span>` : d <= 7 ? `<span class="tag warn">due in ${d} day${d === 1 ? '' : 's'}</span>` : ''; };
+const ago = t => { const m = Math.round((Date.now() - new Date(t).getTime()) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' days ago'; };
+function timerTile() {
+  const e = S.eng;
+  if (!e) return '<div class="stat"><span>Automation timer</span><b>?</b><span>status not available</span></div>';
+  const t = e.last_ok || e.last_cron, stale = !t || (Date.now() - new Date(t).getTime()) > 30 * 60000;
+  return `<div class="stat"><span>Automation timer</span><b>${stale ? '<span class="tag bad" style="font-size:18px">Stopped?</span>' : '<span class="tag ok" style="font-size:18px">Running</span>'}</b><span>${t ? 'last run ' + ago(t) : 'no run recorded yet'}${stale ? ' \u00b7 should run every 10 min' : ''}</span></div>`;
+}
+function plansCard() {
+  const both = S.shops.filter(s => s.pkg_site && s.pkg_ai).length, site = S.shops.filter(s => s.pkg_site && !s.pkg_ai).length, ai = S.shops.filter(s => !s.pkg_site && s.pkg_ai).length;
+  const days = s => Math.round((new Date(s.due_date + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 86400000);
+  const due = S.shops.filter(s => s.due_date && days(s) <= 14).sort((a, b) => a.due_date < b.due_date ? -1 : 1);
+  const pk = s => s.pkg_site && s.pkg_ai ? 'Website + AI' : s.pkg_site ? 'Website only' : 'AI only';
+  return `<div class="card"><h4>Plans and payments</h4>
+  <div class="row" style="gap:8px;margin-bottom:10px"><span class="tag">Website + AI: ${both}</span><span class="tag">Website only: ${site}</span><span class="tag">AI only: ${ai}</span></div>
+  ${due.length ? '<p class="fine">Overdue or due in the next 14 days:</p>' + due.map(s => `<div class="ap" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between"><div><b>${esc(s.name)}</b> <small>${pk(s)} \u00b7 due ${nice(s.due_date)}</small></div><div class="row" style="gap:8px">${dueTag(s)}<button class="btn ghost mini" data-a="paid" data-id="${s.id}">Mark paid</button></div></div>`).join('') : '<p class="fine">Nothing is due in the next 14 days.</p>'}</div>`;
+}
 const state = (sh, k) => !sh['pkg_' + k] ? '<span class="fine">not included</span>' : sh['closed_' + k] ? '<span class="tag bad">closed</span>' : '<span class="tag">open</span>';
 
 function loginView() {
@@ -57,7 +74,7 @@ function loginView() {
   <label class="l">Email<input type="email" id="em" autocomplete="username" maxlength="120" value="${esc(S.em)}" required></label>
   <label class="l">Password<input type="password" id="pw" autocomplete="current-password" maxlength="100" required></label>
   <div class="chks"><label class="chk"><input type="checkbox" id="rem" ${S.remember ? 'checked' : ''}><span>Remember my email</span></label><label class="chk"><input type="checkbox" id="keep" ${S.keep ? 'checked' : ''}><span>Keep me signed in</span></label></div>
-  <div class="err" role="alert">${esc(S.loginErr)}</div><button class="btn" type="submit" ${S.busy ? 'disabled' : ''}>Sign in</button></form></div>`;
+  <div class="err" role="alert">${esc(S.loginErr)}</div><button class="btn" type="submit" ${S.busy ? 'disabled' : ''}>Sign in</button><p class="fine"><a href="../legal.html">Terms and privacy</a></p></form></div>`;
 }
 const BASE = () => location.protocol === 'file:' ? '../' : location.origin + '/';
 function siteLinks(sh) {
@@ -85,7 +102,8 @@ function view() {
   const overdue = S.shops.filter(s => s.due_date && s.due_date < today()).length;
   return `<div class="top"><b>Platform admin · ${esc(S.user.email)}</b><button class="btn ghost small" data-a="logout">Log out</button></div>
   <div class="wrap">
-  <div class="stats"><div class="stat"><span>Clients</span><b>${S.shops.length}</b><span>in total</span></div><div class="stat"><span>Payments overdue</span><b>${overdue}</b><span>to follow up</span></div></div>
+  <div class="stats"><div class="stat"><span>Clients</span><b>${S.shops.length}</b><span>in total</span></div><div class="stat"><span>Payments overdue</span><b>${overdue}</b><span>to follow up</span></div>${timerTile()}</div>
+  ${plansCard()}
   ${reveal}
   <div class="card"><h4>Add a client</h4><p class="fine">Only you create logins. Nothing is emailed to the owner: you pass the email and password on yourself when everything is ready. They can change both after signing in.</p>
   <form id="newShop"><div class="form2"><label class="l">Shop name<input type="text" id="nn" maxlength="80" required></label><label class="l">Owner email<input type="email" id="ne" maxlength="120" required></label>
