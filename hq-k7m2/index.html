@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>Platform admin</title>
+<title>Platform admin</title><link rel="icon" type="image/png" href="../favicon.png"><link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="../app.css">
@@ -70,7 +70,7 @@ function plansCard() {
 const state = (sh, k) => !sh['pkg_' + k] ? '<span class="fine">not included</span>' : sh['closed_' + k] ? '<span class="tag bad">closed</span>' : '<span class="tag">open</span>';
 
 function loginView() {
-  return `<div class="login"><div class="brandL">Platform admin</div><form class="card" id="loginForm"><h3 style="font-size:28px">Sign in</h3>
+  return `<div class="login"><img class="logoL" src="../logo-dark.svg" alt="Shopmate"><div class="brandL">Platform admin</div><form class="card" id="loginForm"><h3 style="font-size:28px">Sign in</h3>
   <label class="l">Email<input type="email" id="em" autocomplete="username" maxlength="120" value="${esc(S.em)}" required></label>
   <label class="l">Password<input type="password" id="pw" autocomplete="current-password" maxlength="100" required></label>
   <div class="chks"><label class="chk"><input type="checkbox" id="rem" ${S.remember ? 'checked' : ''}><span>Remember my email</span></label><label class="chk"><input type="checkbox" id="keep" ${S.keep ? 'checked' : ''}><span>Keep me signed in</span></label></div>
