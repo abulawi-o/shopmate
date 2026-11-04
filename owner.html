@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <title>Owner control panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:wght@600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -135,7 +135,7 @@ function shell(main) {
   const nav = tabs().map(k => { const n = k === 'inbox' ? newCount() : k === 'automations' ? draftCount() : 0; return `<button type="button" class="${S.tab === k ? 'on' : ''}" data-tab="${k}">${ICO[k]}<span>${TABNAMES[k]}</span>${n ? `<em>${n}</em>` : ''}</button>`; }).join('');
   const banner = S.asAdmin ? `<div class="banner"><span>ADMIN VIEW · ${esc(S.shop.name)} · your changes are real and logged</span><a class="btn small ghost" href="hq-k7m2/index.html" style="display:inline-flex;align-items:center;text-decoration:none">← Back to admin</a></div>` : '';
   const top = S.asAdmin ? '' : `<div class="top"><b>Owner control panel</b><button class="btn ghost small" type="button" data-a="logout">Log out</button></div>`;
-  return `${banner}${top}<div class="body"><nav class="side" aria-label="Main"><div class="brand2">${esc(S.shop.name)}</div>${nav}<div class="note">Every message includes your business name, address and a STOP option. Customers who say STOP are never messaged again.</div></nav><div class="main">${main}</div></div>`;
+  return `${banner}<div class="body"><nav class="side" aria-label="Main"><div class="brand2">${esc(S.shop.name)}</div>${nav}<div class="note">Every message includes your business name, address and a STOP option. Customers who say STOP are never messaged again.</div></nav><div class="main">${top}${main}</div></div>`;
 }
 const toMin = v => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(v || '')); return m ? (+m[1]) * 60 + (+m[2]) : null; };
 const toHHMM = m => m == null || m === '' ? '' : String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
@@ -149,15 +149,46 @@ function slotsFor(date) {
   const out = []; for (let t = h.start; t + 30 <= h.end; t += 30) out.push(t); return out;
 }
 
+const IC = {
+  req: '<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L3 20l1-5.2A8 8 0 1121 12z"/></svg>',
+  cal: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>',
+  bolt: '<svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
+  star: '<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>'
+};
+/* weekly counts for the overview chart: last 8 weeks, Monday to Sunday */
+function weekly() {
+  const m0 = monday(new Date()), weeks = [];
+  for (let i = 7; i >= 0; i--) { const s = addDays(m0, -7 * i); weeks.push({ from: E.iso(s), to: E.iso(addDays(s, 6)), label: s.toLocaleDateString([], { month: 'short', day: 'numeric' }), appts: 0, reqs: 0 }); }
+  S.bookings.forEach(b => { const w = weeks.find(x => b.date >= x.from && b.date <= x.to); if (!w) return; if (b.status === 'accepted') w.appts++; if (b.source === 'website' && b.status !== 'cancelled') w.reqs++; });
+  return weeks;
+}
+function smooth(pts) { let d = 'M' + pts[0][0] + ',' + pts[0][1]; for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], cx = (x0 + x1) / 2; d += ' C' + cx + ',' + y0 + ' ' + cx + ',' + y1 + ' ' + x1 + ',' + y1; } return d; }
+function chart(weeks) {
+  const W = 640, H = 190, padB = 24, padT = 12, max = Math.max(4, ...weeks.map(w => Math.max(w.appts, w.reqs)));
+  const xs = i => 26 + i * ((W - 52) / (weeks.length - 1)), ys = v => padT + (H - padB - padT) * (1 - v / max);
+  const line = k => weeks.map((w, i) => [Math.round(xs(i)), Math.round(ys(w[k]))]);
+  const area = k => { const p = line(k); return smooth(p) + ' L' + p[p.length - 1][0] + ',' + (H - padB) + ' L' + p[0][0] + ',' + (H - padB) + ' Z'; };
+  const labels = weeks.map((w, i) => i % 2 === 0 ? `<text x="${Math.round(xs(i))}" y="${H - 6}" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">${esc(w.label)}</text>` : '').join('');
+  const grid = [0.25, 0.5, 0.75].map(f => `<line x1="0" x2="${W}" y1="${Math.round(padT + (H - padB - padT) * f)}" y2="${Math.round(padT + (H - padB - padT) * f)}" stroke="currentColor" opacity=".12"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Appointments and requests over the last 8 weeks"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FE0EE" stop-opacity=".55"/><stop offset="1" stop-color="#7FE0EE" stop-opacity="0"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A99CFF" stop-opacity=".5"/><stop offset="1" stop-color="#A99CFF" stop-opacity="0"/></linearGradient></defs>${grid}<path d="${area('reqs')}" fill="url(#g2)"/><path d="${smooth(line('reqs'))}" fill="none" stroke="#A99CFF" stroke-width="2.5" stroke-linecap="round"/><path d="${area('appts')}" fill="url(#g1)"/><path d="${smooth(line('appts'))}" fill="none" stroke="#7FE0EE" stroke-width="2.5" stroke-linecap="round"/>${labels}</svg>`;
+}
 function viewToday() {
   const t = todayIso(), list = S.bookings.filter(b => b.status === 'accepted' && b.date === t).sort((a, b) => a.time - b.time);
   const on = teamOn(t).map(b => b.name), h = new Date().getHours(), hi = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
   const kc = k => S.eng.outbox.filter(m => m.kind === k && m.status !== 'blocked').length;
-  const big = (n, l, d) => `<div class="stat"><span>${l}</span><b>${n}</b><span>${d}</span></div>`;
-  return `<div class="row" style="justify-content:space-between;align-items:flex-end"><div><h3>${hi}</h3><p>${esc(S.shop.name)} · ${niceDate(t)}</p></div><span class="dry">PRACTICE RUN · NOTHING IS SENT</span></div>
-  <div class="stats"><button type="button" class="stat" data-tab="inbox"><span>New requests</span><b>${newCount()}</b><span>waiting for your answer</span></button><div class="stat"><span>Appointments today</span><b>${list.length}</b><span>${on.length ? 'Working: ' + esc(on.join(', ')) : 'Nobody working'}</span></div><button type="button" class="stat" data-tab="automations"><span>Messages to approve</span><b>${draftCount()}</b><span>drafted, nothing sent</span></button></div>
-  <div class="stats">${big(kc('review'), 'Review requests', 'drafted so far')}${big(kc('reminder'), 'Appointment reminders', 'drafted so far')}${big(kc('missed') + kc('inquiry'), 'Missed calls and inquiries', 'text-backs drafted')}${big(kc('winback'), 'Win-back notes', 'drafted so far')}</div>
-  <div class="card"><h4>Today's appointments</h4>${list.length ? list.map(apptRow).join('') : '<p>Nothing booked yet today.</p>'}</div>`;
+  const weeks = weekly(), tot = k => weeks.reduce((n, w) => n + w[k], 0), any = tot('appts') + tot('reqs') > 0;
+  const custs = new Set(S.bookings.filter(b => b.status === 'accepted' && b.phone).map(b => String(b.phone).replace(/\D/g, ''))).size;
+  const tile = (cls, ico, n, l, d, tab) => `<${tab ? 'button type="button" data-tab="' + tab + '"' : 'div'} class="stat ${cls}"><span class="ico">${ico}</span><b>${n}</b><span>${l}</span><span>${d}</span></${tab ? 'button' : 'div'}>`;
+  const recent = S.bookings.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 5);
+  const act = recent.length ? recent.map(b => `<div class="act"><span class="av">${esc((b.name || '?').charAt(0).toUpperCase())}</span><div><b>${esc(b.name)}</b><small>${b.status === 'new' ? 'Sent a request' : b.status === 'accepted' ? 'Booked' : b.status === 'cancelled' ? 'Cancelled' : 'Declined'} · ${esc(b.service || 'Appointment')} · ${niceDate(b.date)} ${E.tLabel(b.time)}</small></div><span class="tag ${b.status === 'new' ? 'warn' : b.status}">${b.status === 'new' ? 'New' : b.status === 'accepted' ? 'Booked' : b.status}</span></div>`).join('') : '<p class="fine">Nothing yet. Requests and bookings show up here as they happen.</p>';
+  return `<div class="row" style="justify-content:space-between;align-items:flex-end"><div><h3>${hi}</h3><p class="fine" style="margin:0">${esc(S.shop.name)} · ${niceDate(t)}</p></div><span class="dry">PRACTICE RUN · NOTHING IS SENT</span></div>
+  <div class="grid2"><div class="hero"><div><h4>Business overview</h4><div class="sub">Last 8 weeks, by week</div></div>
+    <div class="legend"><div><small><i style="background:#7FE0EE"></i>Appointments</small><b>${tot('appts')}</b></div><div><small><i style="background:#A99CFF"></i>Website requests</small><b>${tot('reqs')}</b></div><div><small>Customers</small><b>${custs}</b></div></div>
+    ${chart(weeks)}${any ? '' : '<p class="empty">No bookings yet. As requests and appointments come in, this chart fills in by itself.</p>'}</div>
+  <div class="card"><div class="row" style="justify-content:space-between"><h4>Today's schedule</h4><span class="tag">${list.length}</span></div>${list.length ? list.map(apptRow).join('') : '<p class="fine">Nothing booked yet today.</p>'}<small>${on.length ? 'Working today: ' + esc(on.join(', ')) : 'Nobody working today'}</small></div></div>
+  <div class="stats">${tile('dark', IC.req, newCount(), 'New requests', 'waiting for your answer', 'inbox')}${tile('', IC.cal, list.length, 'Appointments today', on.length ? 'Working: ' + esc(on.join(', ')) : 'Nobody working')}${tile('', IC.bolt, draftCount(), 'Messages to approve', 'drafted, nothing sent', 'automations')}${tile('', IC.star, kc('review'), 'Review requests', 'drafted so far')}</div>
+  <div class="grid2"><div class="card"><h4>Recent activity</h4>${act}</div>
+  <div class="card"><h4>What the system drafted</h4><div class="act"><span class="av">${kc('reminder')}</span><div><b>Appointment reminders</b><small>24 hours and 2 hours before</small></div></div><div class="act"><span class="av">${kc('missed') + kc('inquiry')}</span><div><b>Missed calls and inquiries</b><small>text-backs and follow-ups</small></div></div><div class="act"><span class="av">${kc('winback')}</span><div><b>Win-back notes</b><small>customers not seen in 6 weeks</small></div></div></div></div>`;
 }
 function viewInbox() {
   const nw = S.bookings.filter(b => b.status === 'new').sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
