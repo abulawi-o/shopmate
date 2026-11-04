@@ -13,3 +13,14 @@ GOING ONLINE (Cloudflare Pages, free)
 4. For a client's own domain: in Cloudflare Pages > Custom domains, add it, then type the same domain in the
    "Website domain" box on that client's row in your admin page. The site shows that client's website.
 5. The automation timer already runs on its own on the server every 10 minutes (no need to keep a page open).
+
+
+CUSTOM CLIENT WEBSITE (designed just for one client)
+1. Make a folder for them:  sites/their-name/index.html   (sites/northline is a finished example to copy)
+2. In that page, after the config.js line, add:  <script>LEO.shopId = 'THEIR-SHOP-ID'</script>
+   (the shop ID is in the "Preview website" link on their row in your admin page: the part after ?shop=)
+3. The page loads connect.js, which gives it:  LeoConnect.load()  (their name, hours, services, team from their dashboard)
+                                               LeoConnect.book()  (a booking request that lands in their dashboard)
+                                               LeoConnect.ownerUrl()  (the shared owner login link)
+4. Their site address:  https://abulawi-o.github.io/shopmate/sites/their-name/   (or their own domain later)
+5. Their dashboard and AI system need nothing extra. Same shop, same data.
