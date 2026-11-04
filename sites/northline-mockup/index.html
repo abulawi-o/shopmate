@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Northline Barbers · mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0F0E0C; --panel:#171612; --line:#2A2620; --fg:#F3EEE3; --muted:#A79F8E;
+  --gold:#E2B552; --gold-deep:#B9892F; --on-gold:#14110A;
+  --display:'Barlow Condensed','Arial Narrow',sans-serif; --body:'DM Sans',system-ui,sans-serif;
+  --gutter:max(20px,env(safe-area-inset-left,0px)); --gutter-r:max(20px,env(safe-area-inset-right,0px));
+  --sec:clamp(56px,8vw,96px); --max:1180px; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);overflow-x:hidden}
+a{color:inherit}
+img{max-width:100%}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:6px}
+.wrap{width:100%;max-width:var(--max);margin-inline:auto;padding-left:var(--gutter);padding-right:var(--gutter-r)}
+.eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:700;margin:0 0 12px}
+h1,h2,h3{font-family:var(--display);text-transform:uppercase;letter-spacing:.03em;line-height:1;margin:0;font-weight:700;text-wrap:balance}
+h1{font-size:clamp(46px,6.6vw,88px)}
+h2{font-size:clamp(36px,5vw,56px)}
+h3{font-size:24px;font-weight:600}
+p{margin:0}
+.lead{color:var(--muted);max-width:52ch;font-size:18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 26px;border-radius:999px;background:var(--gold);color:var(--on-gold);font-weight:700;text-decoration:none;border:1px solid var(--gold);transition:.2s}
+.btn:hover{background:var(--gold-deep);border-color:var(--gold-deep)}
+.btn.ghost{background:transparent;color:var(--fg);border-color:rgba(243,238,227,.3)}
+.btn.ghost:hover{border-color:var(--gold);color:var(--gold)}
+.row{display:flex;flex-wrap:wrap;gap:12px}
+
+/* sample banner */
+.sample{background:var(--gold);color:var(--on-gold);font-size:13px;font-weight:700;text-align:center;padding:8px var(--gutter);padding-right:var(--gutter-r)}
+
+/* nav */
+nav.bar{position:sticky;top:0;z-index:30;background:rgba(15,14,12,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav.bar .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px}
+.brand{font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;text-decoration:none;white-space:nowrap}
+.brand span{color:var(--gold)}
+.links{display:flex;gap:26px;align-items:center}
+.links a{text-decoration:none;font-size:15px;color:var(--muted)}
+.links a.btn{color:var(--on-gold);min-height:42px;padding:0 20px}
+.links a:hover{color:var(--fg)}
+@media(max-width:820px){.links a:not(.btn){display:none}}
+
+/* hero with scroll-turning chair */
+.heroTrack{height:220vh;position:relative}
+.stage{position:sticky;top:64px;height:calc(100svh - 64px);min-height:540px;display:grid;grid-template-columns:1.05fr 1fr;align-items:center;gap:8px;grid-template-rows:minmax(0,1fr);overflow:hidden}
+.stage .copy{display:flex;flex-direction:column;gap:16px;position:relative;z-index:2}
+.glow{position:absolute;inset:0;background:radial-gradient(50% 55% at 72% 50%,rgba(226,181,82,.13),transparent 70%);pointer-events:none}
+.chairBox{position:relative;height:100%;min-height:0;align-self:stretch}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+.steps{display:flex;flex-direction:column;gap:0;margin-top:4px;border-top:1px solid var(--line)}
+.steps li{list-style:none;display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);color:var(--muted);transition:.3s;font-size:15px}
+.steps li b{font-weight:500}.steps li span{font-family:var(--display);letter-spacing:.08em;text-transform:uppercase}
+.steps li.on{color:var(--fg)}.steps li.on span{color:var(--gold)}
+.steps{margin:0;padding:0}
+.cue{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.nogl{display:none;position:absolute;inset:0;place-items:center;text-align:center;color:var(--muted);padding:20px}
+.nogl.on{display:grid}
+@media(max-width:820px){
+  .heroTrack{height:230vh}
+  .stage{grid-template-columns:1fr;grid-template-rows:minmax(0,46%) auto;align-content:start;padding-top:6px}
+  .stage .copy{order:2;gap:12px}
+  .steps{display:none}
+  h1{font-size:clamp(40px,12vw,56px)}
+  .stage{grid-template-rows:minmax(0,48%) auto}
+  .chairBox{order:1;min-height:0}
+  .glow{background:radial-gradient(60% 40% at 50% 28%,rgba(226,181,82,.14),transparent 70%)}
+  .lead{font-size:16px}
+  .steps li{padding:8px 0;font-size:14px}
+}
+
+/* info strip */
+.strip{border-block:1px solid var(--line);background:var(--panel)}
+.strip .wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.strip .it{padding:22px 24px 22px 0;display:flex;flex-direction:column;gap:2px}
+.strip .it+.it{padding-left:24px;border-left:1px solid var(--line)}
+.strip small{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.strip b{font-weight:500;font-size:17px}
+@media(max-width:700px){.strip .wrap{grid-template-columns:1fr}.strip .it,.strip .it+.it{padding:14px 0;border-left:0}.strip .it+.it{border-top:1px solid var(--line)}}
+
+section.s{padding-block:var(--sec)}
+.head{display:flex;flex-direction:column;gap:14px;margin-bottom:36px;max-width:640px}
+
+/* services */
+.svc{display:grid;grid-template-columns:1fr 1fr;gap:0 56px}
+.svc li{list-style:none;display:flex;justify-content:space-between;gap:18px;align-items:baseline;padding:18px 0;border-top:1px solid var(--line)}
+.svc li:nth-last-child(-n+2){border-bottom:1px solid var(--line)}
+.svc b{font-weight:500;font-size:18px}.svc small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+.svc .p{font-family:var(--display);font-size:30px;color:var(--gold);font-weight:600}
+.svc{margin:0;padding:0}
+@media(max-width:760px){.svc{grid-template-columns:1fr}.svc li:nth-last-child(2){border-bottom:0}}
+.note{color:var(--muted);font-size:14px;margin-top:18px}
+
+/* team */
+.team{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.ph{aspect-ratio:4/3;border-radius:10px;background:repeating-linear-gradient(135deg,#1d1b16 0 14px,#211e18 14px 28px);display:grid;place-items:center;color:var(--muted);font-size:13px;letter-spacing:.1em;text-transform:uppercase;text-align:center;padding:10px}
+.card .role{color:var(--muted);font-size:14px}
+.days{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.days i{font-style:normal;font-size:11px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);color:var(--muted)}
+.days i.on{background:var(--gold);border-color:var(--gold);color:var(--on-gold);font-weight:700}
+@media(max-width:820px){.team{grid-template-columns:minmax(0,1fr)}.card{flex-direction:row;align-items:center;gap:16px;padding:16px}.card>div:last-child{min-width:0}.card .ph{width:104px;aspect-ratio:1;flex:none;font-size:10px}}
+
+/* work */
+.work{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.work .ph{aspect-ratio:1;border:1px solid var(--line)}
+.work .ph:first-child{grid-column:span 2;grid-row:span 2;aspect-ratio:auto}
+@media(max-width:700px){.work{grid-template-columns:1fr 1fr}.work .ph:first-child{grid-column:span 2;grid-row:auto;aspect-ratio:16/10}}
+
+/* reviews */
+.rev{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.rev .card{min-height:150px;justify-content:space-between;border-style:dashed;color:var(--muted)}
+.stars{color:var(--gold);letter-spacing:3px}
+@media(max-width:820px){.rev{grid-template-columns:1fr}.rev .card{flex-direction:column;align-items:stretch}}
+
+/* visit */
+.visit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:stretch}
+.hours{display:flex;flex-direction:column}
+.hours div{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line);font-size:16px}
+.hours div:last-child{border-bottom:1px solid var(--line)}
+.hours div.today{color:var(--gold);font-weight:700}
+.map{border-radius:14px;min-height:280px;aspect-ratio:auto}
+@media(max-width:820px){.visit{grid-template-columns:minmax(0,1fr)}}
+
+.cta{background:var(--panel);border-block:1px solid var(--line);text-align:center}
+.cta .wrap{display:flex;flex-direction:column;align-items:center;gap:20px}
+.cta .lead{margin-inline:auto}
+footer{padding:28px 0 calc(28px + env(safe-area-inset-bottom,0px));color:var(--muted);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-between}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="sample">Sample design for Northline Barbers. Names, prices, hours and photos are placeholders.</div>
+
+<nav class="bar"><div class="wrap">
+  <a class="brand" href="#top">North<span>line</span></a>
+  <div class="links"><a href="#services">Services</a><a href="#team">Barbers</a><a href="#work">Work</a><a href="#visit">Visit</a><a class="btn" href="#book">Book now</a></div>
+</div></nav>
+
+<main id="top">
+<div class="heroTrack" id="heroTrack">
+ <div class="stage wrap">
+  <div class="glow" aria-hidden="true"></div>
+  <div class="copy">
+    <p class="eyebrow">Barbershop · Milton, Ontario</p>
+    <h1>Sharp cuts.<br>Old school<br>chair.</h1>
+    <p class="lead">Fades, tapers, beards and hot towel shaves in an old-school chair. Walk-ins welcome, appointments get priority.</p>
+    <div class="row"><a class="btn" href="#book">Book a chair</a><a class="btn ghost" href="#services">See prices</a></div>
+    <ul class="steps" id="steps" aria-label="What we do">
+      <li class="on"><b>Fades and tapers</b><span>Front</span></li>
+      <li><b>Hot towel shaves</b><span>Side</span></li>
+      <li><b>Beard sculpting</b><span>Back</span></li>
+    </ul>
+  </div>
+  <div class="chairBox" id="chairBox">
+    <canvas id="gl" aria-label="Rotating 3D barber chair (stand-in model)" role="img"></canvas>
+    <div class="nogl" id="nogl">3D view is not available in this browser.</div>
+  </div>
+ </div>
+</div>
+
+<div class="strip"><div class="wrap">
+  <div class="it"><small>Open today</small><b id="today">9:00 am – 7:00 pm</b></div>
+  <div class="it"><small>Find us</small><b>123 Main St E, Milton</b></div>
+  <div class="it"><small>Call</small><b>(905) 555-0142</b></div>
+</div></div>
+
+<section class="s" id="services"><div class="wrap">
+  <div class="head"><p class="eyebrow">Services</p><h2>Cut with intent</h2><p class="lead">Straightforward prices. Every cut includes a wash and style.</p></div>
+  <ul class="svc">
+    <li><div><b>Signature cut</b><small>Fade or taper, wash and style</small></div><span class="p">$30</span></li>
+    <li><div><b>Cut + beard + lineup</b><small>Our most popular</small></div><span class="p">$50</span></li>
+    <li><div><b>Hot towel shave</b><small>Straight razor, steamed towels</small></div><span class="p">$25</span></li>
+    <li><div><b>Beard trim + lineup</b><small>Shaped to your face</small></div><span class="p">$20</span></li>
+    <li><div><b>Kids cut (under 10)</b><small>Patient hands, quick work</small></div><span class="p">$20</span></li>
+    <li><div><b>Lineup only</b><small>Edges and neckline</small></div><span class="p">$15</span></li>
+  </ul>
+  <p class="note">Sample prices. Real ones are set by the shop.</p>
+</div></section>
+
+<section class="s" id="team" style="padding-top:0"><div class="wrap">
+  <div class="head"><p class="eyebrow">The barbers</p><h2>Pick your chair</h2></div>
+  <div class="team" id="teamGrid"></div>
+</div></section>
+
+<section class="s" id="work" style="padding-top:0"><div class="wrap">
+  <div class="head"><p class="eyebrow">Recent work</p><h2>Fresh out of the chair</h2></div>
+  <div class="work">
+    <div class="ph">Photo of a recent cut</div><div class="ph">Photo</div><div class="ph">Photo</div><div class="ph">Photo</div><div class="ph">Photo</div>
+  </div>
+  <p class="note">The shop's own photos go here.</p>
+</div></section>
+
+<section class="s" style="padding-top:0"><div class="wrap">
+  <div class="head"><p class="eyebrow">Reviews</p><h2>What clients say</h2><p class="lead">Live Google reviews appear in this spot once the shop is connected.</p></div>
+  <div class="rev">
+    <div class="card"><span class="stars" aria-hidden="true">★★★★★</span><p>Review slot 1</p></div>
+    <div class="card"><span class="stars" aria-hidden="true">★★★★★</span><p>Review slot 2</p></div>
+    <div class="card"><span class="stars" aria-hidden="true">★★★★★</span><p>Review slot 3</p></div>
+  </div>
+</div></section>
+
+<section class="s" id="visit" style="padding-top:0"><div class="wrap">
+  <div class="head"><p class="eyebrow">Visit</p><h2>Come on in</h2></div>
+  <div class="visit">
+    <div class="hours" id="hours"></div>
+    <div class="ph map">Map goes here<br>123 Main St E, Milton, ON</div>
+  </div>
+</div></section>
+
+<section class="s cta" id="book"><div class="wrap">
+  <p class="eyebrow" style="margin:0">Book</p>
+  <h2>Your chair is waiting</h2>
+  <p class="lead">Pick a barber, a day and a time. We text you a reminder.</p>
+  <div class="row" style="justify-content:center"><a class="btn" href="tel:+19055550142">Call (905) 555-0142</a><a class="btn ghost" href="#services">See prices</a></div>
+</div></section>
+</main>
+
+<footer><div class="wrap"><span>© Northline Barbers · Milton, Ontario</span><span>Website and booking by Shopmate</span></div></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ---------- content ---------- */
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],FULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const HOURS=[[9,19],[9,19],[9,19],[9,19],[9,19],[9,19],[10,18]];
+const fmt=h=>{const a=h>=12?'pm':'am';return ((h+11)%12+1)+':00 '+a};
+const todayIdx=(new Date().getDay()+6)%7;
+document.getElementById('hours').innerHTML=FULL.map((d,i)=>`<div class="${i===todayIdx?'today':''}"><span>${d}</span><span>${fmt(HOURS[i][0])} – ${fmt(HOURS[i][1])}</span></div>`).join('');
+document.getElementById('today').textContent=fmt(HOURS[todayIdx][0])+' – '+fmt(HOURS[todayIdx][1]);
+const TEAM=[['Mike','Master barber · owner',[0,1,1,1,1,1,0]],['Dre','Fades and tapers',[1,1,1,1,1,0,0]],['Leo','Beards and hot towel',[0,0,0,1,1,1,1]]];
+document.getElementById('teamGrid').innerHTML=TEAM.map(t=>`<div class="card"><div class="ph">Photo</div><div><h3>${t[0]}</h3><p class="role">${t[1]}</p><div class="days" aria-label="Works ${t[2].map((x,i)=>x?FULL[i]:'').filter(Boolean).join(', ')}">${t[2].map((x,i)=>`<i class="${x?'on':''}">${DAYS[i][0]}</i>`).join('')}</div></div></div>`).join('');
+
+/* ---------- 3D chair (stand-in built from basic shapes) ---------- */
+(function(){
+  const canvas=document.getElementById('gl'),box=document.getElementById('chairBox');
+  let renderer;
+  try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,preserveDrawingBuffer:true})}catch(e){document.getElementById('nogl').classList.add('on');return}
+  renderer.setPixelRatio(Math.min(2,devicePixelRatio));renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(30,1,.1,100);
+  (function(){const env=new THREE.Scene(),c=document.createElement('canvas');c.width=8;c.height=256;const g=c.getContext('2d'),gr=g.createLinearGradient(0,0,0,256);
+   gr.addColorStop(0,'#fff4dc');gr.addColorStop(.42,'#8a6a3a');gr.addColorStop(.5,'#2a1c0c');gr.addColorStop(1,'#0a0704');g.fillStyle=gr;g.fillRect(0,0,8,256);
+   const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;env.add(new THREE.Mesh(new THREE.SphereGeometry(40,32,16),new THREE.MeshBasicMaterial({map:tex,side:THREE.BackSide})));
+   const bx=(w,h,col,x,y,z)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:col,side:THREE.DoubleSide}));m.position.set(x,y,z);m.lookAt(0,0,0);env.add(m)};
+   bx(26,16,new THREE.Color(2.6,2.3,1.9),0,3,26);bx(10,6,new THREE.Color(3,2.7,2.3),14,10,16);bx(5,22,new THREE.Color(5,4.6,4),-22,2,6);bx(22,3,new THREE.Color(6,6,6),0,24,-4);bx(7,12,new THREE.Color(2.2,1.8,1.3),8,-6,-20);bx(18,8,new THREE.Color(2.4,2.1,1.7),-14,4,-18);
+   const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(env,.02).texture;pm.dispose()})();
+  const gold=new THREE.MeshStandardMaterial({color:0xD9A53A,metalness:1,roughness:.2,envMapIntensity:1.15});
+  const leather=new THREE.MeshPhysicalMaterial({color:0x0c0c0c,metalness:0,roughness:.38,clearcoat:.6,clearcoatRoughness:.35,envMapIntensity:.9});
+  const gloss=new THREE.MeshPhysicalMaterial({color:0x050505,metalness:.2,roughness:.18,clearcoat:1,envMapIntensity:1});
+  const chair=new THREE.Group();
+  const add=(geo,mat,x=0,y=0,z=0,p)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(p)p(m);chair.add(m);return m};
+  const capsule=(r,len)=>{const pts=[];for(let i=0;i<=10;i++){const a=-Math.PI/2+i/10*Math.PI/2;pts.push(new THREE.Vector2(Math.cos(a)*r,Math.sin(a)*r-len/2))}for(let i=0;i<=10;i++){const a=i/10*Math.PI/2;pts.push(new THREE.Vector2(Math.cos(a)*r,Math.sin(a)*r+len/2))}return new THREE.LatheGeometry(pts,24)};
+  const cyl=(rt,rb,h,s=64)=>new THREE.CylinderGeometry(rt,rb,h,s);
+  const tube=(pts,r,seg=48)=>new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p))),seg,r,12,false);
+
+  /* base */
+  add(cyl(1.6,1.6,.1),gloss,0,.05,0);
+  add(new THREE.TorusGeometry(1.6,.07,16,96),gold,0,.12,0,m=>m.rotation.x=Math.PI/2);
+  add(cyl(1.35,1.5,.14),gloss,0,.2,0);
+  add(cyl(.46,.7,.8),gloss,0,.7,0);
+  add(cyl(.5,.5,.1),gold,0,1.12,0);
+  add(new THREE.TorusGeometry(.9,.025,10,64),gold,0,.62,0,m=>m.rotation.x=Math.PI/2);
+  /* seat */
+  add(cyl(1.18,1.18,.34),gold,0,1.38,0);
+  add(cyl(1.1,1.1,.12),gold,0,1.19,0);
+  add(new THREE.SphereGeometry(1,48,24),leather,0,1.62,.02,m=>m.scale.set(1.08,.3,1.05));
+  /* round tufted back */
+  const back=new THREE.Group();back.position.set(0,2.95,-1.02);back.rotation.x=-.2;chair.add(back);
+  const bm=(geo,mat,x=0,y=0,z=0,p)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(p)p(m);back.add(m);return m};
+  bm(new THREE.SphereGeometry(1,48,24),leather,0,0,0,m=>m.scale.set(1.0,1.05,.2));
+  bm(new THREE.TorusGeometry(1.0,.07,16,96),gold,0,0,-.02);
+  bm(new THREE.TorusGeometry(1.0,.05,16,96),gold,0,0,-.2);
+  bm(cyl(.04,.04,.2),gold,0,0,-.1,m=>m.rotation.x=Math.PI/2);
+  [[0,0],[.42,.0],[-.42,.0],[.21,.38],[-.21,.38],[.21,-.38],[-.21,-.38],[0,.72],[0,-.72]].forEach(([x,y])=>{
+    const z=.2*Math.sqrt(Math.max(.02,1-(x*x)/1-(y*y)/1.1))+.01;
+    bm(new THREE.SphereGeometry(.05,16,12),gold,x,y,z+.02);
+  });
+  /* headrest */
+  bm(cyl(.03,.03,.5),gold,0,1.25,-.02);
+  bm(new THREE.SphereGeometry(1,32,16),leather,0,1.58,.05,m=>m.scale.set(.5,.2,.2));
+  /* back struts */
+  [-1,1].forEach(s=>add(tube([[s*.95,1.55,-.55],[s*1.08,2.0,-.8],[s*1.0,2.6,-1.0]],.045),gold));
+  /* arms */
+  [-1,1].forEach(s=>{
+    add(tube([[s*1.12,1.5,.0],[s*1.34,1.9,-.08],[s*1.3,2.25,.15],[s*1.2,2.3,.65]],.055),gold);
+    add(tube([[s*1.08,1.5,.5],[s*1.3,1.9,.62],[s*1.28,2.28,.6]],.045),gold);
+    add(capsule(.1,1.05),leather,s*1.22,2.38,.1,m=>m.rotation.x=Math.PI/2);
+    add(new THREE.SphereGeometry(.07,16,12),gold,s*1.22,2.42,-.5);
+  });
+  /* leg rest */
+  [-1,1].forEach(s=>add(tube([[s*.78,1.2,.8],[s*.82,.8,1.5],[s*.8,.55,2.2]],.045),gold));
+  add(new THREE.BoxGeometry(1.5,.1,.35),gold,0,.62,1.0,m=>m.rotation.x=.3);
+  const plate=add(new THREE.BoxGeometry(1.45,.16,1.0),leather,0,.62,2.35,m=>m.rotation.x=-.18);
+  add(new THREE.BoxGeometry(1.55,.06,1.1),gold,0,.52,2.38,m=>m.rotation.x=-.18);
+  chair.position.y=-1.55;chair.scale.setScalar(1);
+  const rig=new THREE.Group();rig.add(chair);scene.add(rig);
+  scene.add(new THREE.DirectionalLight(0xfff0d0,.35));
+
+  function size(){const w=box.clientWidth,h=box.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+    const k=Math.min(1,w/h);camera.position.set(0,2.8,15/Math.min(1.15,Math.max(.55,k))*.72);camera.lookAt(0,.55,0)}
+  addEventListener('resize',size);size();new ResizeObserver(size).observe(box);
+
+  const track=document.getElementById('heroTrack'),steps=[...document.querySelectorAll('#steps li')];
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const q=new URLSearchParams(location.search);
+  let cur=0,mouse=0,tgt=0;
+  addEventListener('pointermove',e=>{mouse=(e.clientX/innerWidth*2-1)*.25});
+  function progress(){const r=track.getBoundingClientRect(),max=r.height-innerHeight+64;return Math.min(1,Math.max(0,-r.top/Math.max(1,max)))}
+  function frame(now){
+    const p=q.has('p')?+q.get('p'):progress();
+    tgt=reduce?.55:(.55+p*Math.PI*2*.92);
+    cur+=(tgt-cur)*(q.has('p')?1:.08);
+    rig.rotation.y=cur+mouse; rig.rotation.x=.04;
+    rig.position.y=reduce?0:Math.sin(now/900)*.04;
+    const i=Math.min(2,Math.floor(p*3));steps.forEach((s,j)=>s.classList.toggle('on',j===i));
+    renderer.render(scene,camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
