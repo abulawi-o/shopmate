@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Platform admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:wght@600&display=swap">
+<link rel="stylesheet" href="../app.css">
+<style>.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}.sh td .row{gap:6px}.mini{min-height:34px;padding:0 10px;font-size:13px;border-radius:10px}</style>
+</head>
+<body>
+<div id="app"><p style="text-align:center;margin-top:20vh;color:#4C5852">Loading…</p></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="../config.js"></script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s), app = $('#app');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sb = supabase.createClient(LEO.url, LEO.key, { auth: { persistSession: true, autoRefreshToken: true } });
+const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const today = () => iso(new Date());
+const plusMonth = s => { const d = s ? new Date(s + 'T00:00:00') : new Date(); d.setMonth(d.getMonth() + 1); return iso(d); };
+const S = { user: null, shops: [], logins: {}, audit: [], err: '', msg: '', reveal: null, loginErr: '', busy: false, filter: '', em: '' };
+
+async function load() {
+  const [sh, pr, au] = await Promise.all([
+    sb.from('shops').select('*').order('created_at', { ascending: false }),
+    sb.from('profiles').select('shop_id,last_login').eq('role', 'owner'),
+    sb.from('admin_audit').select('*').order('at', { ascending: false }).limit(25)
+  ]);
+  S.shops = sh.data || []; S.audit = au.data || [];
+  S.logins = {}; (pr.data || []).forEach(p => { S.logins[p.shop_id] = p.last_login; });
+  if (sh.error) S.err = sh.error.message;
+}
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { S.user = null; return render(); }
+  const { data: p } = await sb.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
+  if (!p || p.role !== 'admin') { await sb.auth.signOut(); S.user = null; S.loginErr = 'This login is not the platform admin.'; return render(); }
+  S.user = session.user; await load(); render();
+}
+async function fnErr(data, error) { if (data && data.error) return data.error; try { const j = await error.context.json(); if (j && j.error) return j.error; } catch (e) {} return (error && error.message) || 'unknown'; }
+const audit = (shop_id, action) => sb.from('admin_audit').insert({ shop_id, admin_id: S.user.id, action });
+const nice = s => s ? new Date(s + 'T00:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+const dueTag = sh => { if (!sh.due_date) return ''; const d = Math.round((new Date(sh.due_date + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 86400000); return d < 0 ? `<span class="tag bad">${-d} day${d === -1 ? '' : 's'} overdue</span>` : d <= 7 ? `<span class="tag warn">due in ${d} day${d === 1 ? '' : 's'}</span>` : ''; };
+const state = (sh, k) => !sh['pkg_' + k] ? '<span class="fine">not included</span>' : sh['closed_' + k] ? '<span class="tag bad">closed</span>' : '<span class="tag">open</span>';
+
+function loginView() {
+  return `<div class="login"><div class="brandL">Platform admin</div><form class="card" id="loginForm"><h3 style="font-size:28px">Sign in</h3>
+  <label class="l">Email<input type="email" id="em" autocomplete="username" maxlength="120" value="${esc(S.em)}" required></label>
+  <label class="l">Password<input type="password" id="pw" autocomplete="current-password" maxlength="100" required></label>
+  <div class="err" role="alert">${esc(S.loginErr)}</div><button class="btn" type="submit" ${S.busy ? 'disabled' : ''}>Sign in</button></form></div>`;
+}
+const BASE = () => location.protocol === 'file:' ? '../' : location.origin + '/';
+function siteLinks(sh) {
+  const out = [];
+  if (sh.pkg_site) out.push(`<a href="${BASE()}index.html?shop=${sh.id}" target="_blank" rel="noopener">Preview website</a>` + (sh.domain ? ` \u00b7 <a href="https://${esc(sh.domain)}" target="_blank" rel="noopener">${esc(sh.domain)}</a>` : ''));
+  out.push(`<button class="link" type="button" data-a="copy" data-t="${esc(BASE() === '../' ? '(the hosted address)/owner.html' : BASE() + 'owner.html')}" style="padding:0">Owner login link</button>`);
+  return out.join(' \u00b7 ');
+}
+function shopRow(sh) {
+  const siteBtn = sh.pkg_site ? `<button class="btn ghost mini" data-a="own" data-id="${sh.id}" data-k="site" data-v="0">Remove website</button>` : `<button class="btn ghost mini" data-a="own" data-id="${sh.id}" data-k="site" data-v="1">Add website</button>`;
+  const aiBtn = sh.pkg_ai ? `<button class="btn ghost mini" data-a="own" data-id="${sh.id}" data-k="ai" data-v="0">Remove AI</button>` : `<button class="btn ghost mini" data-a="own" data-id="${sh.id}" data-k="ai" data-v="1">Add AI</button>`;
+  const closeBtn = k => sh['pkg_' + k] ? `<button class="btn ${sh['closed_' + k] ? '' : 'danger'} mini" data-a="close" data-id="${sh.id}" data-k="${k}">${sh['closed_' + k] ? 'Reopen ' : 'Close '}${k === 'site' ? 'website' : 'AI'}</button>` : '';
+  const ll = S.logins[sh.id];
+  return `<tr><td><b>${esc(sh.name)}</b><br><small>${esc(sh.owner_email)}</small>${sh.note ? `<br><small>${esc(sh.note)}</small>` : ''}
+  <div class="row" style="margin-top:6px;gap:6px"><input type="text" data-dom="${sh.id}" value="${esc(sh.domain || '')}" placeholder="his website address, e.g. hiscuts.ca" maxlength="100" style="min-height:34px;font-size:13px;max-width:230px" autocomplete="off"></div>
+  <small>${siteLinks(sh)}</small></td>
+  <td>${state(sh, 'site')}</td><td>${state(sh, 'ai')}</td>
+  <td><small>Paid ${nice(sh.paid_date)}</small><br><input type="date" data-due="${sh.id}" value="${esc(sh.due_date || '')}" style="min-height:34px;font-size:14px;max-width:150px"> ${dueTag(sh)}</td>
+  <td><small>${ll ? new Date(ll).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'never signed in'}</small></td>
+  <td><div class="row"><a class="btn mini" style="display:inline-flex;align-items:center;text-decoration:none" href="../owner.html?shop=${sh.id}">Open their space</a><button class="btn ghost mini" data-a="paid" data-id="${sh.id}">Mark paid</button><input type="text" data-rpw="${sh.id}" placeholder="new password (optional)" maxlength="100" autocomplete="off" style="min-height:34px;font-size:13px;max-width:170px"><button class="btn ghost mini" data-a="reset" data-id="${sh.id}">Set password</button>${siteBtn}${aiBtn}${closeBtn('site')}${closeBtn('ai')}</div></td></tr>`;
+}
+function view() {
+  const q = S.filter.toLowerCase(), list = S.shops.filter(s => !q || (s.name + ' ' + s.owner_email).toLowerCase().includes(q));
+  const reveal = S.reveal ? `<div class="card" style="border-color:var(--accent)"><h4>${esc(S.reveal.title)}</h4><p>Email: <b>${esc(S.reveal.email)}</b></p><p>Password (shown once, copy it now):</p><div class="row"><span class="pw">${esc(S.reveal.pw)}</span></div><p class="fine">Send it to the owner when you are ready. Nothing was emailed. They can change it themselves after signing in.</p><div class="row"><button class="btn ghost small" data-a="hide">Done</button></div></div>` : '';
+  const overdue = S.shops.filter(s => s.due_date && s.due_date < today()).length;
+  return `<div class="top"><b>Platform admin · ${esc(S.user.email)}</b><button class="btn ghost small" data-a="logout">Log out</button></div>
+  <div class="wrap">
+  <div class="stats"><div class="stat"><span>Clients</span><b>${S.shops.length}</b><span>in total</span></div><div class="stat"><span>Payments overdue</span><b>${overdue}</b><span>to follow up</span></div></div>
+  ${reveal}
+  <div class="card"><h4>Add a client</h4><p class="fine">Only you create logins. Nothing is emailed to the owner: you pass the email and password on yourself when everything is ready. They can change both after signing in.</p>
+  <form id="newShop"><div class="form2"><label class="l">Shop name<input type="text" id="nn" maxlength="80" required></label><label class="l">Owner email<input type="email" id="ne" maxlength="120" required></label>
+  <label class="l">Start date<input type="date" id="ns" value="${today()}"></label><label class="l">First payment due<input type="date" id="nd" value="${plusMonth()}"></label><label class="l">Note (optional)<input type="text" id="nt" maxlength="120"></label>
+  <label class="l">Password for the owner (you choose it, at least 10 characters; leave empty for a random one)<input type="text" id="np" maxlength="100" autocomplete="off"></label></div>
+  <div class="row" style="margin:10px 0"><label class="consent"><input type="checkbox" id="pS" checked><span>Website</span></label><label class="consent"><input type="checkbox" id="pA" checked><span>AI automation system</span></label></div>
+  <div class="err" role="alert">${esc(S.err)}</div><div class="status">${esc(S.msg)}</div><button class="btn" type="submit" ${S.busy ? 'disabled' : ''}>Create client</button></form></div>
+  <div class="card"><div class="row" style="justify-content:space-between"><h4>Clients</h4><span class="status">${esc(S.msg)}</span><span class="err">${esc(S.err)}</span><input type="text" id="flt" placeholder="Search" value="${esc(S.filter)}" style="max-width:240px"></div>
+  <div class="scroll"><table class="sh"><thead><tr><th>Client</th><th>Website</th><th>AI system</th><th>Payment</th><th>Last sign-in</th><th></th></tr></thead><tbody>${list.map(shopRow).join('') || '<tr><td colspan="6">No clients yet.</td></tr>'}</tbody></table></div></div>
+  <div class="card"><h4>Recent activity</h4>${S.audit.map(a => { const sh = S.shops.find(x => x.id === a.shop_id); return `<div class="ap"><div>${esc(a.action)}${sh ? ' · ' + esc(sh.name) : ''}</div><small>${new Date(a.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</small></div>`; }).join('') || '<p>Nothing yet.</p>'}</div>
+  </div>`;
+}
+function render() { const f = document.activeElement && document.activeElement.id; app.innerHTML = S.user ? view() : loginView(); if (f) { const el = document.getElementById(f); if (el) { el.focus(); if (el.setSelectionRange && el.type === 'text') try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } } }
+
+async function patch(id, p, action) {
+  const { error } = await sb.from('shops').update(p).eq('id', id);
+  if (error) { S.err = error.message; return; }
+  await audit(id, action); S.err = ''; await load();
+}
+const ACT = {
+  logout: async () => { await sb.auth.signOut(); S.user = null; },
+  hide: () => { S.reveal = null; },
+  copy: async el => { try { await navigator.clipboard.writeText(el.dataset.t); S.msg = 'Copied: ' + el.dataset.t; } catch (e) { S.msg = el.dataset.t; } },
+  own: async el => { const k = el.dataset.k, on = el.dataset.v === '1', sh = S.shops.find(x => x.id === el.dataset.id); const other = k === 'site' ? sh.pkg_ai : sh.pkg_site; if (!on && !other) { S.err = 'A client needs at least one thing. Close it instead, or add the other first.'; return; } await patch(sh.id, { ['pkg_' + k]: on, ['closed_' + k]: false }, (on ? 'added ' : 'removed ') + (k === 'site' ? 'website' : 'AI system')); },
+  close: async el => { const k = el.dataset.k, sh = S.shops.find(x => x.id === el.dataset.id), now = !sh['closed_' + k]; await patch(sh.id, { ['closed_' + k]: now }, (now ? 'closed ' : 'reopened ') + (k === 'site' ? 'website' : 'AI system')); },
+  paid: async el => { const sh = S.shops.find(x => x.id === el.dataset.id); await patch(sh.id, { paid_date: today(), due_date: plusMonth(sh.due_date && sh.due_date > today() ? sh.due_date : today()) }, 'marked paid'); },
+  reset: async el => {
+    const sh = S.shops.find(x => x.id === el.dataset.id);
+    const { data, error } = await sb.functions.invoke('admin-reset-password', { body: { shop_id: sh.id, password: (document.querySelector('[data-rpw="' + sh.id + '"]') || {}).value || '' } });
+    if (error || !data || !data.temporary_password) { S.err = 'Could not reset: ' + await fnErr(data, error); return; }
+    S.err = ''; S.reveal = { title: 'New password', email: sh.owner_email, pw: data.temporary_password }; await load();
+  }
+};
+document.addEventListener('click', async ev => {
+  const el = ev.target.closest('[data-a]'); if (!el) return;
+  el.disabled = true; try { await ACT[el.dataset.a](el); } catch (e) { S.err = String(e.message || e); } render();
+});
+document.addEventListener('change', async ev => {
+  const t = ev.target;
+  if (t.dataset && t.dataset.dom) {
+    const v = t.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
+    if (v && !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(v)) { S.err = 'That does not look like a website address. Example: hiscuts.ca'; return render(); }
+    const { error } = await sb.from('shops').update({ domain: v || null }).eq('id', t.dataset.dom);
+    if (error) { S.err = error.message.includes('unique') || error.message.includes('duplicate') ? 'Another client already uses that address.' : error.message; return render(); }
+    await audit(t.dataset.dom, 'set website address ' + (v || '(none)')); S.err = ''; await load(); return render();
+  }
+  if (t.dataset && t.dataset.due) { await patch(t.dataset.due, { due_date: t.value || null }, 'changed due date'); render(); }
+});
+document.addEventListener('input', ev => { if (ev.target.id === 'flt') { S.filter = ev.target.value; render(); } });
+document.addEventListener('submit', async ev => {
+  ev.preventDefault();
+  if (ev.target.id === 'loginForm') {
+    S.em = $('#em').value.trim(); const pwv = $('#pw').value; S.busy = true; S.loginErr = ''; render();
+    const { error } = await sb.auth.signInWithPassword({ email: S.em, password: pwv });
+    S.busy = false;
+    if (error) { S.loginErr = 'That email and password did not match.'; return render(); }
+    await boot();
+  } else if (ev.target.id === 'newShop') {
+    const body = { password: $('#np').value, name: $('#nn').value, email: $('#ne').value, start: $('#ns').value, due: $('#nd').value, note: $('#nt').value, pkg_site: $('#pS').checked, pkg_ai: $('#pA').checked };
+    S.err = ''; S.msg = ''; S.busy = true; render();
+    const { data, error } = await sb.functions.invoke('admin-create-shop', { body });
+    S.busy = false;
+    if (error || !data || !data.temporary_password) { S.err = 'Could not create: ' + await fnErr(data, error); return render(); }
+    S.reveal = { title: 'Client created', email: data.email, pw: data.temporary_password }; S.msg = 'Created ' + body.name + '.'; await load(); render();
+  }
+});
+boot().catch(e => { app.innerHTML = '<div class="login"><div class="card"><p>Something went wrong: ' + esc(e.message || e) + '</p></div></div>'; });
+</script>
+</body>
+</html>
