@@ -160,6 +160,11 @@ section.s{padding-block:var(--sec)}
 .ba .hd{position:absolute;top:0;bottom:0;left:var(--pos);width:2px;margin-left:-1px;background:var(--gold);pointer-events:none}
 .ba .hd::after{content:"";position:absolute;top:50%;left:50%;width:44px;height:44px;margin:-22px;border-radius:50%;background:var(--gold)}
 .ba input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
+.ba img,.slots2 .ph img,.more img{width:100%;height:100%;object-fit:cover;object-position:50% 25%;display:block}
+.slots2 .ph{padding:0;overflow:hidden}
+.more{grid-column:1/-1;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(8px,1.4vw,16px)}
+.more li{aspect-ratio:4/5;overflow:hidden;background:var(--t2)}
+@media(max-width:700px){.more{grid-template-columns:repeat(2,minmax(0,1fr))}.more li:last-child{grid-column:1/-1;aspect-ratio:16/10}}
 .ba:focus-within{outline:2px solid var(--gold);outline-offset:3px}
 .slots2{display:flex;flex-direction:column;gap:18px}
 .slots2 .ph{aspect-ratio:16/10;background:var(--t2);display:grid;place-items:center;color:var(--muted);font-size:14px;text-align:center;padding:12px}
@@ -316,18 +321,19 @@ footer .big{font-size:clamp(46px,12.5vw,170px)}
 
 <section class="s work" id="work"><div class="wrap">
   <h2 class="rv">Fresh out of the chair</h2>
-  <div class="ba rv" id="ba">
-    <div class="lay before">Before photo</div>
-    <div class="lay after">After photo</div>
-    <span class="tag l">Before</span><span class="tag r">After</span>
-    <div class="hd"></div>
-    <input type="range" min="0" max="100" value="50" aria-label="Slide to compare before and after">
-  </div>
+  <div class="ba rv" id="ba"><img src="https://static.wixstatic.com/media/adcf6e_36dc7c19cb734edd9d03141bfef2c23f~mv2.jpeg/v1/fit/w_900,h_900,q_80/golden-chair-cut-2.jpg" alt="Fade with a hard part and a full beard" width="900" height="750" loading="lazy"></div>
   <div class="slots2">
-    <p class="lead rv">Drag the line. The shop’s own before and after photos go here, plus a gallery of recent cuts.</p>
-    <div class="ph rv" style="--d:.1s">Recent cut</div>
-    <div class="ph rv" style="--d:.2s">Recent cut</div>
+    <p class="lead rv">Recent cuts from the chair. Fades, tapers and hand-drawn designs.</p>
+    <div class="ph rv" style="--d:.1s"><img src="https://static.wixstatic.com/media/adcf6e_066594cd4b624b868e482606e8256ad7~mv2.jpeg/v1/fit/w_640,h_640,q_80/golden-chair-cut-1.jpg" alt="Kid’s haircut with a heart design shaved into the side" width="640" height="400" loading="lazy"></div>
+    <div class="ph rv" style="--d:.2s"><img src="https://static.wixstatic.com/media/adcf6e_e9f2817415d247c89a13f7c5a8a27c11~mv2.jpeg/v1/fit/w_640,h_640,q_80/golden-chair-cut-3.jpg" alt="Star design cut into a kid’s fade" width="640" height="400" loading="lazy"></div>
   </div>
+  <ul class="more">
+    <li class="rv" style="--d:0.00s"><img src="https://static.wixstatic.com/media/adcf6e_22a2595c8648465eb4a29c21297ae392~mv2.jpeg/v1/fit/w_480,h_480,q_80/golden-chair-cut-4.jpg" alt="Side part with a clean taper" width="480" height="560" loading="lazy"></li>
+    <li class="rv" style="--d:0.05s"><img src="https://static.wixstatic.com/media/adcf6e_e6b9d4ef595c468fb004b5211a8773c4~mv2.jpeg/v1/fit/w_480,h_480,q_80/golden-chair-cut-5.jpg" alt="Detailed star pattern shaved into the back of the head" width="480" height="560" loading="lazy"></li>
+    <li class="rv" style="--d:0.10s"><img src="https://static.wixstatic.com/media/adcf6e_0ab15b2f05884a97ae26ab7a8f064d91~mv2.jpeg/v1/fit/w_480,h_480,q_80/golden-chair-cut-6.jpg" alt="Textured top with a low fade" width="480" height="560" loading="lazy"></li>
+    <li class="rv" style="--d:0.15s"><img src="https://static.wixstatic.com/media/adcf6e_0301af26167d4a10bf435e573b0304e4~mv2.jpeg/v1/fit/w_480,h_480,q_80/golden-chair-cut-7.jpg" alt="Star design on a shaved fade" width="480" height="560" loading="lazy"></li>
+    <li class="rv" style="--d:0.20s"><img src="https://static.wixstatic.com/media/adcf6e_f7484d817e3940d5a0eb24ac93686c11~mv2.jpeg/v1/fit/w_480,h_480,q_80/golden-chair-cut-8.jpg" alt="Slicked back top with a skin fade" width="480" height="560" loading="lazy"></li>
+  </ul>
 </div></section>
 
 <section class="s revs" style="padding-top:0"><div class="wrap">
@@ -389,7 +395,6 @@ $('teamGrid').innerHTML=TEAM.map((t,i)=>`<li class="rv"><h3>${t[0]}</h3><div><p 
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{rootMargin:'0px 0px -8% 0px',threshold:.08});
   els.forEach(e=>io.observe(e));
   const prog=$('prog');let tk=0;addEventListener('scroll',()=>{if(tk)return;tk=requestAnimationFrame(()=>{tk=0;const m=document.documentElement.scrollHeight-innerHeight;prog.style.transform='scaleX('+(m>0?scrollY/m:0)+')'})},{passive:true})})();
-(function(){const ba=$('ba'),r=ba.querySelector('input');r.addEventListener('input',()=>ba.style.setProperty('--pos',r.value+'%'))})();
 
 /* ---------- booking demo ---------- */
 (function(){
