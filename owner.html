@@ -140,7 +140,7 @@ function shell(main) {
   const nav = tabs().map(k => { const n = k === 'inbox' ? newCount() : k === 'automations' ? draftCount() : 0; return `<button type="button" class="${S.tab === k ? 'on' : ''}" data-tab="${k}">${ICO[k]}<span>${TABNAMES[k]}</span>${n ? `<em>${n}</em>` : ''}</button>`; }).join('');
   const banner = S.asAdmin ? `<div class="banner"><span>ADMIN VIEW · ${esc(S.shop.name)} · your changes are real and logged</span><a class="btn small ghost" href="hq-k7m2/index.html" style="display:inline-flex;align-items:center;text-decoration:none">← Back to admin</a></div>` : '';
   const top = S.asAdmin ? '' : `<div class="top"><b>Owner control panel</b><button class="btn ghost small" type="button" data-a="logout">Log out</button></div>`;
-  return `${banner}<div class="body"><nav class="side" aria-label="Main"><div class="brand2">${esc(S.shop.name)}</div>${nav}<div class="note">Every message includes your business name, address and a STOP option. Customers who say STOP are never messaged again.</div></nav><div class="main">${top}${main}</div></div>`;
+  return `${banner}<div class="body"><nav class="side" aria-label="Main"><div class="brand2">${esc(S.shop.name)}</div>${nav}<div class="note">Every message includes your business name, address and a STOP option. Customers who say STOP are never messaged again.</div><div class="note" style="margin-top:8px"><a href="guide.html" style="color:inherit">How to use this panel</a> &middot; <a href="legal.html" style="color:inherit">Terms and privacy</a></div></nav><div class="main">${top}${main}</div></div>`;
 }
 const toMin = v => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(v || '')); return m ? (+m[1]) * 60 + (+m[2]) : null; };
 const toHHMM = m => m == null || m === '' ? '' : String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
@@ -310,7 +310,8 @@ function viewAccount() {
   <form class="card" id="pwForm"><h4>Change password</h4><div class="form2"><label class="l">Current password<input type="password" id="cpw" autocomplete="current-password" maxlength="100" required></label><label class="l">New password (at least 10 characters)<input type="password" id="npw" autocomplete="new-password" maxlength="100" required></label></div>
     <div class="err" role="alert">${esc(S.err)}</div><div class="status">${esc(S.msg)}</div><div class="row"><button class="btn small" type="submit">Save password</button></div></form>
   <form class="card" id="emForm"><h4>Change email</h4><div class="form2"><label class="l">New email<input type="email" id="nem" maxlength="120" required></label><label class="l">Current password<input type="password" id="epw" autocomplete="current-password" maxlength="100" required></label></div>
-    <p class="fine">We email the new address to confirm the change.</p><div class="row"><button class="btn small" type="submit">Change email</button></div></form>`;
+    <p class="fine">We email the new address to confirm the change.</p><div class="row"><button class="btn small" type="submit">Change email</button></div></form>
+  <div class="card"><h4>Help</h4><p><a href="guide.html">How to use this panel</a> &middot; <a href="legal.html">Terms and privacy</a></p></div>`;
 }
 function loginView() {
   if (S.recovery) return `<div class="login"><div class="brandL">Choose a new password</div><form class="card" id="recForm"><label class="l">New password (at least 10 characters)<input type="password" id="rpw" autocomplete="new-password" maxlength="100" required></label><div class="err" role="alert">${esc(S.loginErr)}</div><button class="btn" type="submit">Save and sign in</button></form></div>`;
@@ -320,7 +321,7 @@ function loginView() {
     <div class="chks"><label class="chk"><input type="checkbox" id="rem" ${S.remember ? 'checked' : ''}><span>Remember my email</span></label><label class="chk"><input type="checkbox" id="keep" ${S.keep ? 'checked' : ''}><span>Keep me signed in</span></label></div>
   <div class="err" role="alert">${esc(S.loginErr)}</div><div class="status">${esc(S.info)}</div>
     <button class="btn" type="submit" ${S.busy ? 'disabled' : ''}>Sign in</button><button class="link" type="button" data-a="forgot">Forgot password?</button>
-    <p class="fine">Your provider created your login. There is no sign-up here.</p></form></div>`;
+    <p class="fine">Your provider created your login. There is no sign-up here.</p><p class="fine"><a href="guide.html">Help guide</a> &middot; <a href="legal.html">Terms and privacy</a></p></form></div>`;
 }
 function suspended() {
   return `<div class="top"><b>Owner control panel</b><button class="btn ghost small" type="button" data-a="logout">Log out</button></div><div class="login"><div class="card"><h3 style="font-size:28px">This service is paused</h3><p>Your access is currently switched off. Please contact your provider to get it going again.</p></div></div>`;

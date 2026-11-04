@@ -83,7 +83,7 @@ async function boot() {
   ${services ? `<section><h2>Services</h2><div class="card" style="padding:4px 18px">${services}</div></section>` : ''}
   ${team ? `<section><h2>Your barbers</h2><div class="grid">${team}</div></section>` : ''}
   ${hrs ? `<section><h2>Hours</h2>${hrs}</section>` : ''}
-  <footer>${esc(data.name)}${C.address ? ' · ' + esc(C.address) : ''}${C.phone ? ' · ' + esc(C.phone) : ''} · <a href="owner.html" style="color:inherit">Owner login</a></footer>`;
+  <footer>${esc(data.name)}${C.address ? ' · ' + esc(C.address) : ''}${C.phone ? ' · ' + esc(C.phone) : ''} · <a href="owner.html" style="color:inherit">Owner login</a> · <a href="legal.html" style="color:inherit">Terms and privacy</a></footer>`;
   const b = $('#bk'); if (b) b.addEventListener('click', () => { Object.assign(BK, { open: true, done: false, err: '', day: 0, time: null, barber: 'Anyone' }); for (let i = 0; i < days().length; i++) { BK.day = i; if (slots().length) break; } drawBk(); });
 }
 const days = () => { const out = []; const h = C.hours; for (let i = 0; i < 21 && out.length < 10; i++) { const d = new Date(); d.setDate(d.getDate() + i); if (h.days[dow(d)]) out.push(d); } return out; };

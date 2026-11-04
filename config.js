@@ -2,5 +2,7 @@
 window.LEO = {
   url: 'https://yhmwlwbzhgijttfnplvf.supabase.co',
   key: 'sb_publishable_gXrnJsEUE4S8tCSDh8YTkQ_LY8bEIpl',
+  provider: '', /* your business name, shown in the terms */
+  contact: '', /* your email for privacy requests */
   shopId: '' /* set only in a shop's own website copy */
 };
