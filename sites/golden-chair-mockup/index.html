@@ -161,10 +161,11 @@ section.s{padding-block:var(--sec)}
 .ba .hd::after{content:"";position:absolute;top:50%;left:50%;width:44px;height:44px;margin:-22px;border-radius:50%;background:var(--gold)}
 .ba input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
 .ba img,.slots2 .ph img,.more img{width:100%;height:100%;object-fit:cover;object-position:50% 25%;display:block}
-.slots2 .ph{padding:0;overflow:hidden}
+.slots2 .ph{padding:0!important;overflow:hidden}
 .more{grid-column:1/-1;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(8px,1.4vw,16px)}
 .more li{aspect-ratio:4/5;overflow:hidden;background:var(--t2)}
 @media(max-width:700px){.more{grid-template-columns:repeat(2,minmax(0,1fr))}.more li:last-child{grid-column:1/-1;aspect-ratio:16/10}}
+.ownerLink{color:inherit;text-underline-offset:3px}.ownerLink:hover,.ownerLink:focus-visible{color:var(--gold)}
 .ba:focus-within{outline:2px solid var(--gold);outline-offset:3px}
 .slots2{display:flex;flex-direction:column;gap:18px}
 .slots2 .ph{aspect-ratio:16/10;background:var(--t2);display:grid;place-items:center;color:var(--muted);font-size:14px;text-align:center;padding:12px}
@@ -259,7 +260,7 @@ footer .big{font-size:clamp(46px,12.5vw,170px)}
 <script>document.documentElement.classList.add('js')</script>
 <a class="skip" href="#services">Skip to prices</a>
 <header class="hd" id="hd">
-<div class="sample"><span class="lg">Sample design for Golden Chair Barber Shop. Prices and photos are placeholders.</span><span class="sm">Sample design. Prices and photos are placeholders.</span></div>
+<div class="sample"><span class="lg">Sample design for Golden Chair Barber Shop. Prices are placeholders.</span><span class="sm">Sample design. Prices are placeholders.</span></div>
 
 <nav class="bar"><div class="wrap">
   <a class="brand" translate="no" href="#top"><img class="logo" src="https://static.wixstatic.com/media/adcf6e_3467f37e41c84b36942cba9dafcb1d76~mv2.jpg/v1/fill/w_320,h_270,al_c,q_85/golden-chair-logo.jpg" alt="" width="44" height="37">Golden <span>Chair</span></a>
@@ -365,7 +366,7 @@ footer .big{font-size:clamp(46px,12.5vw,170px)}
 </main>
 
 <footer>
-  <div class="wrap"><span>© Golden Chair Barber Shop · 480 Bronte St S, Unit 113-B, Milton, Ontario</span><span>(289) 627-3560</span><span>Website and booking by Shopmate</span></div>
+  <div class="wrap"><span>© Golden Chair Barber Shop · 480 Bronte St S, Unit 113-B, Milton, Ontario</span><span>(289) 627-3560</span><span>Website by Shopmate · <a class="ownerLink" href="../../owner.html">Owner login</a></span></div>
   <div class="big" translate="no" aria-hidden="true">Golden Chair</div>
 </footer>
 
