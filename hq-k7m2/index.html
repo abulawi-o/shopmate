@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="../app.css">
-<style>.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}.sh td .row{gap:6px}.mini{min-height:34px;padding:0 10px;font-size:13px;border-radius:10px}</style>
+<style>.sh td .row{gap:6px}.mini{min-height:34px;padding:0 10px;font-size:13px;border-radius:10px}</style>
 </head>
 <body>
 <div id="app"><p style="text-align:center;margin-top:20vh;color:#4C5852">Loading…</p></div>
@@ -26,7 +26,7 @@ const sb = supabase.createClient(LEO.url, LEO.key, { auth: { storage: authStore,
 const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const today = () => iso(new Date());
 const plusMonth = s => { const d = s ? new Date(s + 'T00:00:00') : new Date(); d.setMonth(d.getMonth() + 1); return iso(d); };
-const S = { user: null, shops: [], logins: {}, audit: [], err: '', msg: '', reveal: null, loginErr: '', busy: false, filter: '', em: '', eng: null };
+const S = { user: null, shops: [], logins: {}, audit: [], err: '', msg: '', reveal: null, loginErr: '', busy: false, filter: '', em: '', eng: null, page: 'dashboard', menu: false, openId: null };
 S.remember = !!lsGet('leo_email'); S.keep = lsGet('leo_keep') !== '0'; if (S.remember) S.em = lsGet('leo_email') || '';
 
 async function load() {
@@ -58,15 +58,20 @@ function timerTile() {
   const t = e.last_ok || e.last_cron, stale = !t || (Date.now() - new Date(t).getTime()) > 30 * 60000;
   return `<div class="stat"><span>Automation timer</span><b>${stale ? '<span class="tag bad" style="font-size:18px">Stopped?</span>' : '<span class="tag ok" style="font-size:18px">Running</span>'}</b><span>${t ? 'last run ' + ago(t) : 'no run recorded yet'}${stale ? ' \u00b7 should run every 10 min' : ''}</span></div>`;
 }
-function plansCard() {
-  const both = S.shops.filter(s => s.pkg_site && s.pkg_ai).length, site = S.shops.filter(s => s.pkg_site && !s.pkg_ai).length, ai = S.shops.filter(s => !s.pkg_site && s.pkg_ai).length;
-  const days = s => Math.round((new Date(s.due_date + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 86400000);
-  const due = S.shops.filter(s => s.due_date && days(s) <= 14).sort((a, b) => a.due_date < b.due_date ? -1 : 1);
-  const pk = s => s.pkg_site && s.pkg_ai ? 'Website + AI' : s.pkg_site ? 'Website only' : 'AI only';
-  return `<div class="card"><h4>Plans and payments</h4>
-  <div class="row" style="gap:8px;margin-bottom:10px"><span class="tag">Website + AI: ${both}</span><span class="tag">Website only: ${site}</span><span class="tag">AI only: ${ai}</span></div>
-  ${due.length ? '<p class="fine">Overdue or due in the next 14 days:</p>' + due.map(s => `<div class="ap" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between"><div><b>${esc(s.name)}</b> <small>${pk(s)} \u00b7 due ${nice(s.due_date)}</small></div><div class="row" style="gap:8px">${dueTag(s)}<button class="btn ghost mini" data-a="paid" data-id="${s.id}">Mark paid</button></div></div>`).join('') : '<p class="fine">Nothing is due in the next 14 days.</p>'}</div>`;
-}
+const daysTo = d => Math.round((new Date(d + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 86400000);
+const planOf = s => s.pkg_site && s.pkg_ai ? 'Website + AI' : s.pkg_site ? 'Website only' : 'AI only';
+const rolling = s => (s.pkg_site && !s.closed_site) || (s.pkg_ai && !s.closed_ai);
+const planCounts = () => `<div class="row" style="gap:8px"><span class="tag">Website + AI: ${S.shops.filter(s => s.pkg_site && s.pkg_ai).length}</span><span class="tag">Website only: ${S.shops.filter(s => s.pkg_site && !s.pkg_ai).length}</span><span class="tag">AI only: ${S.shops.filter(s => !s.pkg_site && s.pkg_ai).length}</span></div>`;
+const dueRow = s => `<div class="ap" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between"><div><b>${esc(s.name)}</b> <small>${planOf(s)} · due ${nice(s.due_date)}</small></div><div class="row" style="gap:8px">${dueTag(s)}<button class="btn ghost mini" data-a="paid" data-id="${s.id}">Mark paid</button></div></div>`;
+const msgs = () => (S.err ? `<div class="err" role="alert">${esc(S.err)}</div>` : '') + (S.msg ? `<div class="status">${esc(S.msg)}</div>` : '');
+const ICA = {
+  dashboard: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
+  clients: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 010 6.8M18 14.8c2 .6 3.2 2.3 3.5 5.2"/></svg>',
+  add: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
+  payments: '<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h3"/></svg>',
+  activity: '<svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>'
+};
+const PAGES = [['dashboard', 'Dashboard'], ['clients', 'Clients'], ['add', 'Add a client'], ['payments', 'Plans and payments'], ['activity', 'Activity']];
 const state = (sh, k) => !sh['pkg_' + k] ? '<span class="fine">not included</span>' : sh['closed_' + k] ? '<span class="tag bad">closed</span>' : '<span class="tag">open</span>';
 
 function loginView() {
@@ -83,38 +88,64 @@ function siteLinks(sh) {
   out.push(`<button class="link" type="button" data-a="copy" data-t="${esc(BASE() === '../' ? '(the hosted address)/owner.html' : BASE() + 'owner.html')}" style="padding:0">Owner login link</button>`);
   return out.join(' \u00b7 ');
 }
-function shopRow(sh) {
+const chip = (sh, k, label) => !sh['pkg_' + k] ? `<span class="tag off">${label}: not included</span>` : sh['closed_' + k] ? `<span class="tag bad">${label}: closed</span>` : `<span class="tag ok">${label}: open</span>`;
+const fdt = t => t ? new Date(t).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'never signed in';
+function clientCard(sh) {
   const siteBtn = sh.pkg_site ? `<button class="btn ghost mini" data-a="own" data-id="${sh.id}" data-k="site" data-v="0">Remove website</button>` : `<button class="btn ghost mini" data-a="own" data-id="${sh.id}" data-k="site" data-v="1">Add website</button>`;
   const aiBtn = sh.pkg_ai ? `<button class="btn ghost mini" data-a="own" data-id="${sh.id}" data-k="ai" data-v="0">Remove AI</button>` : `<button class="btn ghost mini" data-a="own" data-id="${sh.id}" data-k="ai" data-v="1">Add AI</button>`;
   const closeBtn = k => sh['pkg_' + k] ? `<button class="btn ${sh['closed_' + k] ? '' : 'danger'} mini" data-a="close" data-id="${sh.id}" data-k="${k}">${sh['closed_' + k] ? 'Reopen ' : 'Close '}${k === 'site' ? 'website' : 'AI'}</button>` : '';
-  const ll = S.logins[sh.id];
-  return `<tr><td><b>${esc(sh.name)}</b><br><small>${esc(sh.owner_email)}</small>${sh.note ? `<br><small>${esc(sh.note)}</small>` : ''}
-  <div class="row" style="margin-top:6px;gap:6px"><input type="text" data-dom="${sh.id}" value="${esc(sh.domain || '')}" placeholder="his website address, e.g. hiscuts.ca" maxlength="100" style="min-height:34px;font-size:13px;max-width:230px" autocomplete="off"></div>
-  <small>${siteLinks(sh)}</small></td>
-  <td>${state(sh, 'site')}</td><td>${state(sh, 'ai')}</td>
-  <td><small>Paid ${nice(sh.paid_date)}</small><br><input type="date" data-due="${sh.id}" value="${esc(sh.due_date || '')}" style="min-height:34px;font-size:14px;max-width:150px"> ${dueTag(sh)}</td>
-  <td><small>${ll ? new Date(ll).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'never signed in'}</small></td>
-  <td><div class="row"><a class="btn mini" style="display:inline-flex;align-items:center;text-decoration:none" href="../owner.html?shop=${sh.id}">Open their space</a><button class="btn ghost mini" data-a="paid" data-id="${sh.id}">Mark paid</button><input type="text" data-rpw="${sh.id}" placeholder="new password (optional)" maxlength="100" autocomplete="off" style="min-height:34px;font-size:13px;max-width:170px"><button class="btn ghost mini" data-a="reset" data-id="${sh.id}">Set password</button>${siteBtn}${aiBtn}${closeBtn('site')}${closeBtn('ai')}</div></td></tr>`;
+  const open = S.openId === sh.id;
+  const manage = open ? `<div class="manage">
+    <div class="mg"><h5>Website address</h5><input type="text" data-dom="${sh.id}" value="${esc(sh.domain || '')}" placeholder="his website address, e.g. hiscuts.ca" maxlength="100" autocomplete="off"><small>${siteLinks(sh)}</small></div>
+    <div class="mg"><h5>Next payment due</h5><input type="date" data-due="${sh.id}" value="${esc(sh.due_date || '')}"></div>
+    <div class="mg"><h5>Owner password</h5><div class="row" style="gap:6px"><input type="text" data-rpw="${sh.id}" placeholder="new password (optional)" maxlength="100" autocomplete="off"><button class="btn ghost mini" data-a="reset" data-id="${sh.id}">Set password</button></div></div>
+    <div class="mg"><h5>Plan and access</h5><div class="row" style="gap:6px">${siteBtn}${aiBtn}${closeBtn('site')}${closeBtn('ai')}</div></div></div>` : '';
+  return `<div class="cl"><div class="clh"><div style="min-width:0"><b>${esc(sh.name)}</b><small>${esc(sh.owner_email)}${sh.note ? ' · ' + esc(sh.note) : ''}</small></div><div class="tags">${chip(sh, 'site', 'Website')}${chip(sh, 'ai', 'AI')}${dueTag(sh)}</div></div>
+  <div class="cls"><small>Last sign-in: ${fdt(S.logins[sh.id])}</small><small>Paid ${nice(sh.paid_date)} · due ${nice(sh.due_date)}</small></div>
+  <div class="row" style="gap:8px"><a class="btn mini" style="display:inline-flex;align-items:center;text-decoration:none" href="../owner.html?shop=${sh.id}">Open their space</a><button class="btn ghost mini" data-a="paid" data-id="${sh.id}">Mark paid</button><button class="btn ghost mini" data-a="more" data-id="${sh.id}" aria-expanded="${open}">${open ? 'Hide settings' : 'Settings'}</button></div>${manage}</div>`;
 }
-function view() {
+function pgDashboard() {
+  const overdue = S.shops.filter(s => s.due_date && daysTo(s.due_date) < 0), soon = S.shops.filter(s => s.due_date && daysTo(s.due_date) >= 0 && daysTo(s.due_date) <= 7);
+  const closed = S.shops.filter(s => !rolling(s)), never = S.shops.filter(s => !S.logins[s.id]);
+  const attn = [...overdue, ...soon].map(dueRow).join('') + closed.map(s => `<div class="ap"><div><b>${esc(s.name)}</b> <small>everything is closed</small></div><button class="btn ghost mini" data-a="more" data-id="${s.id}" data-go="1">Open settings</button></div>`).join('') + never.filter(s => rolling(s)).map(s => `<div class="ap"><div><b>${esc(s.name)}</b> <small>has not signed in yet · send them their login</small></div></div>`).join('');
+  return `<div><h3>Dashboard</h3><p class="fine" style="margin:0">Signed in as ${esc(S.user.email)}</p></div>${msgs()}
+  <div class="stats"><div class="stat dark"><span>Clients rolling</span><b>${S.shops.filter(rolling).length}</b><span>${S.shops.length} in total</span></div><div class="stat"><span>Payments overdue</span><b>${overdue.length}</b><span>${soon.length} more due this week</span></div>${timerTile()}</div>
+  <div class="grid2"><div class="card"><h4>Needs your attention</h4>${attn || '<p class="fine">All clear. Nothing needs you right now.</p>'}</div>
+  <div class="card"><h4>Plans</h4>${planCounts()}<div class="row" style="margin-top:12px;gap:8px"><button class="btn small" data-a="page" data-p="add">Add a client</button><button class="btn ghost small" data-a="page" data-p="payments">Plans and payments</button></div></div></div>
+  <div class="card"><div class="row" style="justify-content:space-between"><h4>Recent activity</h4><button class="link" data-a="page" data-p="activity">See all</button></div>${actList(5)}</div>`;
+}
+const actList = n => S.audit.slice(0, n).map(a => { const sh = S.shops.find(x => x.id === a.shop_id); return `<div class="ap"><div>${esc(a.action)}${sh ? ' · ' + esc(sh.name) : ''}</div><small>${fdt(a.at)}</small></div>`; }).join('') || '<p class="fine">Nothing yet.</p>';
+function pgClients() {
   const q = S.filter.toLowerCase(), list = S.shops.filter(s => !q || (s.name + ' ' + s.owner_email).toLowerCase().includes(q));
-  const reveal = S.reveal ? `<div class="card" style="border-color:var(--accent)"><h4>${esc(S.reveal.title)}</h4><p>Email: <b>${esc(S.reveal.email)}</b></p><p>Password (shown once, copy it now):</p><div class="row"><span class="pw">${esc(S.reveal.pw)}</span></div><p class="fine">Send it to the owner when you are ready. Nothing was emailed. They can change it themselves after signing in.</p><div class="row"><button class="btn ghost small" data-a="hide">Done</button></div></div>` : '';
-  const overdue = S.shops.filter(s => s.due_date && s.due_date < today()).length;
-  return `<div class="top"><b>Platform admin · ${esc(S.user.email)}</b><button class="btn ghost small" data-a="logout">Log out</button></div>
-  <div class="wrap">
-  <div class="stats"><div class="stat"><span>Clients</span><b>${S.shops.length}</b><span>in total</span></div><div class="stat"><span>Payments overdue</span><b>${overdue}</b><span>to follow up</span></div>${timerTile()}</div>
-  ${plansCard()}
-  ${reveal}
-  <div class="card"><h4>Add a client</h4><p class="fine">Only you create logins. Nothing is emailed to the owner: you pass the email and password on yourself when everything is ready. They can change both after signing in.</p>
-  <form id="newShop"><div class="form2"><label class="l">Shop name<input type="text" id="nn" maxlength="80" required></label><label class="l">Owner email<input type="email" id="ne" maxlength="120" required></label>
+  return `<div class="row" style="justify-content:space-between;align-items:flex-end"><div><h3>Clients</h3><p class="fine" style="margin:0">${S.shops.filter(rolling).length} rolling · ${S.shops.length} in total</p></div><input type="text" id="flt" placeholder="Search clients" value="${esc(S.filter)}" style="max-width:260px"></div>${msgs()}
+  <div class="cls2">${list.map(clientCard).join('') || '<div class="card"><p>' + (S.shops.length ? 'No client matches that search.' : 'No clients yet. Add your first one.') + '</p></div>'}</div>`;
+}
+function pgAdd() {
+  return `<div><h3>Add a client</h3><p class="fine" style="margin:0">Only you create logins. Nothing is emailed to the owner: you pass the email and password on yourself when everything is ready. They can change both after signing in.</p></div>
+  <form class="card" id="newShop"><div class="form2"><label class="l">Shop name<input type="text" id="nn" maxlength="80" required></label><label class="l">Owner email<input type="email" id="ne" maxlength="120" required></label>
   <label class="l">Start date<input type="date" id="ns" value="${today()}"></label><label class="l">First payment due<input type="date" id="nd" value="${plusMonth()}"></label><label class="l">Note (optional)<input type="text" id="nt" maxlength="120"></label>
   <label class="l">Password for the owner (you choose it, at least 10 characters; leave empty for a random one)<input type="text" id="np" maxlength="100" autocomplete="off"></label></div>
   <div class="row" style="margin:10px 0"><label class="consent"><input type="checkbox" id="pS" checked><span>Website</span></label><label class="consent"><input type="checkbox" id="pA" checked><span>AI automation system</span></label></div>
-  <div class="err" role="alert">${esc(S.err)}</div><div class="status">${esc(S.msg)}</div><button class="btn" type="submit" ${S.busy ? 'disabled' : ''}>Create client</button></form></div>
-  <div class="card"><div class="row" style="justify-content:space-between"><h4>Clients</h4><span class="status">${esc(S.msg)}</span><span class="err">${esc(S.err)}</span><input type="text" id="flt" placeholder="Search" value="${esc(S.filter)}" style="max-width:240px"></div>
-  <div class="scroll"><table class="sh"><thead><tr><th>Client</th><th>Website</th><th>AI system</th><th>Payment</th><th>Last sign-in</th><th></th></tr></thead><tbody>${list.map(shopRow).join('') || '<tr><td colspan="6">No clients yet.</td></tr>'}</tbody></table></div></div>
-  <div class="card"><h4>Recent activity</h4>${S.audit.map(a => { const sh = S.shops.find(x => x.id === a.shop_id); return `<div class="ap"><div>${esc(a.action)}${sh ? ' · ' + esc(sh.name) : ''}</div><small>${new Date(a.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</small></div>`; }).join('') || '<p>Nothing yet.</p>'}</div>
-  </div>`;
+  <div class="err" role="alert">${esc(S.err)}</div><div class="status">${esc(S.msg)}</div><button class="btn" type="submit" ${S.busy ? 'disabled' : ''}>Create client</button></form>`;
+}
+function pgPayments() {
+  const due = S.shops.filter(s => s.due_date && daysTo(s.due_date) <= 14).sort((a, b) => a.due_date < b.due_date ? -1 : 1);
+  const all = [...S.shops].sort((a, b) => (a.due_date || '9') < (b.due_date || '9') ? -1 : 1);
+  return `<div><h3>Plans and payments</h3><p class="fine" style="margin:0">Billing is by e-transfer. Press Mark paid when it arrives and the next due date moves forward a month.</p></div>${msgs()}
+  <div class="card"><h4>Plans</h4>${planCounts()}</div>
+  <div class="card"><h4>Overdue or due in the next 14 days</h4>${due.map(dueRow).join('') || '<p class="fine">Nothing is due in the next 14 days.</p>'}</div>
+  <div class="card"><h4>All clients</h4><div class="scroll"><table class="sh"><thead><tr><th>Client</th><th>Plan</th><th>Last paid</th><th>Next due</th><th></th></tr></thead><tbody>${all.map(s => `<tr><td><b>${esc(s.name)}</b><br><small>${esc(s.owner_email)}</small></td><td>${planOf(s)}</td><td>${nice(s.paid_date)}</td><td><input type="date" data-due="${s.id}" value="${esc(s.due_date || '')}" style="min-height:34px;font-size:14px;max-width:150px"> ${dueTag(s)}</td><td><button class="btn ghost mini" data-a="paid" data-id="${s.id}">Mark paid</button></td></tr>`).join('') || '<tr><td colspan="5">No clients yet.</td></tr>'}</tbody></table></div></div>`;
+}
+function pgActivity() { return `<div><h3>Activity</h3><p class="fine" style="margin:0">Everything you did inside a client's space or changed about a client.</p></div><div class="card">${actList(25)}</div>`; }
+function view() {
+  const reveal = S.reveal ? `<div class="card" style="border-color:var(--accent)"><h4>${esc(S.reveal.title)}</h4><p>Email: <b>${esc(S.reveal.email)}</b></p><p>Password (shown once, copy it now):</p><div class="row"><span class="pw">${esc(S.reveal.pw)}</span></div><p class="fine">Send it to the owner when you are ready. Nothing was emailed. They can change it themselves after signing in.</p><div class="row"><button class="btn ghost small" data-a="hide">Done</button></div></div>` : '';
+  const od = S.shops.filter(s => s.due_date && daysTo(s.due_date) < 0).length, open = !!S.menu;
+  const nav = PAGES.map(([k, n]) => `<button type="button" class="${S.page === k ? 'on' : ''}" data-a="page" data-p="${k}">${ICA[k]}<span>${n}</span>${k === 'payments' && od ? `<em>${od}</em>` : ''}</button>`).join('');
+  const body = { dashboard: pgDashboard, clients: pgClients, add: pgAdd, payments: pgPayments, activity: pgActivity }[S.page]();
+  const pn = (PAGES.find(p => p[0] === S.page) || [])[1] || '';
+  return `<header class="bar admbar"><button type="button" class="hbtn" data-a="menu" aria-label="Open menu" aria-expanded="${open}" aria-controls="drawer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>${od ? '<i class="dot"></i>' : ''}</button><div class="shopn"><img src="../mark.svg" alt="">Platform admin</div><span class="pg">${pn}</span></header>
+  <div class="admshell"><nav class="side drawer admdrawer ${open ? 'open' : ''}" id="drawer" aria-label="Main"><div class="dtop"><div class="brand2" style="padding-bottom:14px">Platform admin</div><button type="button" class="x" data-a="closemenu" aria-label="Close menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>${nav}<div class="note">Signed in as ${esc(S.user.email)}</div><div class="links"><a href="../legal.html">Terms and privacy</a></div><button type="button" class="out" data-a="logout">Log out</button></nav>${open ? '<div class="scrim" data-a="closemenu"></div>' : ''}
+  <div class="main">${reveal}${body}</div></div>`;
 }
 function render() { const f = document.activeElement && document.activeElement.id; app.innerHTML = S.user ? view() : loginView(); if (f) { const el = document.getElementById(f); if (el) { el.focus(); if (el.setSelectionRange && el.type === 'text') try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } } }
 
@@ -124,8 +155,12 @@ async function patch(id, p, action) {
   await audit(id, action); S.err = ''; await load();
 }
 const ACT = {
-  logout: async () => { await sb.auth.signOut(); S.user = null; },
+  logout: async () => { await sb.auth.signOut(); S.user = null; S.page = 'dashboard'; S.menu = false; S.openId = null; },
   hide: () => { S.reveal = null; },
+  page: el => { S.page = el.dataset.p; S.menu = false; S.err = ''; S.msg = ''; window.scrollTo(0, 0); },
+  menu: () => { S.menu = !S.menu; },
+  closemenu: () => { S.menu = false; },
+  more: el => { const id = el.dataset.id; S.openId = el.dataset.go ? id : (S.openId === id ? null : id); if (el.dataset.go) S.page = 'clients'; },
   copy: async el => { try { await navigator.clipboard.writeText(el.dataset.t); S.msg = 'Copied: ' + el.dataset.t; } catch (e) { S.msg = el.dataset.t; } },
   own: async el => { const k = el.dataset.k, on = el.dataset.v === '1', sh = S.shops.find(x => x.id === el.dataset.id); const other = k === 'site' ? sh.pkg_ai : sh.pkg_site; if (!on && !other) { S.err = 'A client needs at least one thing. Close it instead, or add the other first.'; return; } await patch(sh.id, { ['pkg_' + k]: on, ['closed_' + k]: false }, (on ? 'added ' : 'removed ') + (k === 'site' ? 'website' : 'AI system')); },
   close: async el => { const k = el.dataset.k, sh = S.shops.find(x => x.id === el.dataset.id), now = !sh['closed_' + k]; await patch(sh.id, { ['closed_' + k]: now }, (now ? 'closed ' : 'reopened ') + (k === 'site' ? 'website' : 'AI system')); },
@@ -152,6 +187,7 @@ document.addEventListener('change', async ev => {
   }
   if (t.dataset && t.dataset.due) { await patch(t.dataset.due, { due_date: t.value || null }, 'changed due date'); render(); }
 });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && S.menu) { S.menu = false; render(); } });
 document.addEventListener('input', ev => { if (ev.target.id === 'flt') { S.filter = ev.target.value; render(); } });
 document.addEventListener('submit', async ev => {
   ev.preventDefault();
