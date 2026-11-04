@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Owner control panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:wght@600&display=swap">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="app"><p style="text-align:center;margin-top:20vh;color:#4C5852">Loading…</p></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="engine.js"></script>
+<script>
+'use strict';
+const E = Engine, $ = s => document.querySelector(s), app = $('#app');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sb = supabase.createClient(LEO.url, LEO.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+const D = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const todayIso = () => E.iso(new Date());
+const dow = s => (E.fromIso(s).getDay() + 6) % 7;
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const monday = d => addDays(d, -((d.getDay() + 6) % 7));
+const niceDate = s => E.fromIso(s).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+const PLATFORMS = [['instagram', 'Instagram', 'instagram.com/yourshop'], ['facebook', 'Facebook', 'facebook.com/yourshop'], ['tiktok', 'TikTok', 'tiktok.com/@yourshop'], ['google', 'Google reviews', 'g.page/yourshop'], ['youtube', 'YouTube', 'youtube.com/@yourshop'], ['whatsapp', 'WhatsApp', 'wa.me/19055550100']];
+const ICO = {
+  today: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
+  appointments: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h3"/></svg>',
+  inbox: '<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L3 20l1-5.2A8 8 0 1121 12z"/></svg>',
+  automations: '<svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
+  customers: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.4 3.3-5.5 6.5-5.5s5.9 2.1 6.5 5.5M16 4.8a3.5 3.5 0 010 6.4M18 14.8c1.9.7 3.2 2.4 3.5 5.2"/></svg>',
+  team: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>',
+  website: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>',
+  account: '<svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>'
+};
+const TABNAMES = { today: 'Overview', appointments: 'Appointments', inbox: 'Requests', automations: 'Automations', customers: 'Customers', team: 'Team and staff', website: 'Website', account: 'My login' };
+
+const S = { user: null, shop: null, content: null, bookings: [], eng: null, asAdmin: false, recovery: false, tab: 'today', date: todayIso(), form: { name: '', phone: '', barber: '', date: todayIso(), time: '', end: '', consent: false }, msg: '', err: '', loginErr: '', info: '', busy: false, noAccess: '', em: '' };
+const live = k => !!S.shop && S.shop['pkg_' + k] && !S.shop['closed_' + k];
+const has = k => !!S.shop && S.shop['pkg_' + k];
+
+const defContent = c => {
+  c = c && typeof c === 'object' ? c : {};
+  const h = c.hours || {};
+  return {
+    tagline: c.tagline || '', address: c.address || '', phone: c.phone || '',
+    services: Array.isArray(c.services) ? c.services : [],
+    team: Array.isArray(c.team) ? c.team : [],
+    hours: { start: Number.isInteger(h.start) ? h.start : 540, end: Number.isInteger(h.end) ? h.end : 1080, days: Array.isArray(h.days) && h.days.length === 7 ? h.days : [true, true, true, true, true, true, false] },
+    socials: c.socials && typeof c.socials === 'object' ? c.socials : {}
+  };
+};
+
+/* ---------------- data ---------------- */
+async function loadAll() {
+  const id = S.shop.id;
+  const [c, b, e] = await Promise.all([
+    sb.from('shop_site').select('content').eq('shop_id', id).maybeSingle(),
+    sb.from('bookings').select('*').eq('shop_id', id).order('date').order('time'),
+    sb.from('engine_state').select('data').eq('shop_id', id).maybeSingle()
+  ]);
+  S.content = defContent(c.data && c.data.content);
+  S.bookings = b.data || [];
+  S.eng = E.normalize(e.data && e.data.data);
+}
+async function reloadBookings() {
+  if (!S.shop || !live('ai') && !S.asAdmin) return;
+  const { data } = await sb.from('bookings').select('*').eq('shop_id', S.shop.id).order('date').order('time');
+  if (data) { S.bookings = data; engAuto(true); }
+}
+async function saveContent(msg) {
+  const { error } = await sb.from('shop_site').update({ content: S.content, updated_at: new Date().toISOString() }).eq('shop_id', S.shop.id);
+  S.err = error ? 'Could not save: ' + error.message : ''; S.msg = error ? '' : (msg || 'Saved.');
+}
+let engTimer = null;
+function engSave() {
+  clearTimeout(engTimer);
+  engTimer = setTimeout(async () => {
+    const { error } = await sb.from('engine_state').update({ data: S.eng, updated_at: new Date().toISOString() }).eq('shop_id', S.shop.id);
+    if (error) { S.err = 'Could not save automations: ' + error.message; render(); }
+  }, 500);
+}
+const shopForEngine = () => ({ name: S.shop.name, address: S.content.address, winDays: 42 });
+/* the Engine checks by itself: on open, every minute, and whenever bookings change. Safe to repeat. */
+function engAuto(rerender) {
+  if (!S.shop || !S.eng || !(live('ai') || S.asAdmin && has('ai'))) return;
+  const today = E.dayNum(todayIso()) + S.eng.sim;
+  const [m, b] = E.runFor(S.eng, S.bookings, shopForEngine(), today);
+  S.eng.lastCheck = Date.now();
+  if (m || b) { S.eng.msg = `Checked by itself: ${m} new draft${m === 1 ? '' : 's'}${b ? ', ' + b + ' blocked by the rules' : ''}.`; engSave(); if (rerender) render(); }
+}
+
+/* ---------------- boot ---------------- */
+sb.auth.onAuthStateChange((ev) => { if (ev === 'PASSWORD_RECOVERY') { S.recovery = true; render(); } });
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { S.user = null; return render(); }
+  S.user = session.user;
+  const { data: p } = await sb.from('profiles').select('role,shop_id').eq('id', S.user.id).maybeSingle();
+  if (!p) { S.noAccess = 'This login is not connected to a shop. Ask your provider.'; return render(); }
+  let shopId = p.shop_id;
+  if (p.role === 'admin') {
+    shopId = new URLSearchParams(location.search).get('shop');
+    if (!shopId) { S.noAccess = 'admin'; return render(); }
+    S.asAdmin = true;
+  }
+  const { data: sh } = await sb.from('shops').select('*').eq('id', shopId).maybeSingle();
+  if (!sh) { S.noAccess = 'Shop not found.'; return render(); }
+  S.shop = sh;
+  if (S.asAdmin) await sb.from('admin_audit').insert({ shop_id: sh.id, admin_id: S.user.id, action: 'opened their space' });
+  else { sb.rpc('touch_login'); sb.rpc('sync_owner_email'); }
+  await loadAll();
+  S.tab = firstTab();
+  engAuto(false);
+  render();
+}
+const firstTab = () => tabs()[0] || 'account';
+function tabs() {
+  const ai = S.asAdmin ? has('ai') : live('ai'), site = S.asAdmin ? has('site') : live('site');
+  const t = [];
+  if (ai) t.push('today', 'appointments', 'inbox', 'automations', 'customers');
+  if (ai || site) t.push('team');
+  if (site) t.push('website');
+  if (!S.asAdmin) t.push('account');
+  return t;
+}
+
+/* ---------------- views ---------------- */
+const newCount = () => S.bookings.filter(b => b.status === 'new').length;
+const draftCount = () => S.eng.outbox.filter(m => m.status === 'draft').length;
+function shell(main) {
+  const nav = tabs().map(k => { const n = k === 'inbox' ? newCount() : k === 'automations' ? draftCount() : 0; return `<button type="button" class="${S.tab === k ? 'on' : ''}" data-tab="${k}">${ICO[k]}<span>${TABNAMES[k]}</span>${n ? `<em>${n}</em>` : ''}</button>`; }).join('');
+  const banner = S.asAdmin ? `<div class="banner"><span>ADMIN VIEW · ${esc(S.shop.name)} · your changes are real and logged</span><a class="btn small ghost" href="hq-k7m2/index.html" style="display:inline-flex;align-items:center;text-decoration:none">← Back to admin</a></div>` : '';
+  const top = S.asAdmin ? '' : `<div class="top"><b>Owner control panel</b><button class="btn ghost small" type="button" data-a="logout">Log out</button></div>`;
+  return `${banner}${top}<div class="body"><nav class="side" aria-label="Main"><div class="brand2">${esc(S.shop.name)}</div>${nav}<div class="note">Every message includes your business name, address and a STOP option. Customers who say STOP are never messaged again.</div></nav><div class="main">${main}</div></div>`;
+}
+const toMin = v => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(v || '')); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+const toHHMM = m => m == null || m === '' ? '' : String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+const rangeLabel = b => E.tLabel(b.time) + (b.end_time ? ' \u2013 ' + E.tLabel(b.end_time) : '');
+const durOf = b => b.end_time ? b.end_time - b.time : ((S.content.services.find(x => x.name === b.service) || {}).mins || 30);
+const overlapsWith = (date, barber, start, end) => S.bookings.filter(b => b.status === 'accepted' && b.date === date && b.barber === barber && start < b.time + durOf(b) && b.time < end);
+const apptRow = b => `<div class="ap"><div><b>${rangeLabel(b)}</b> <span>${esc(b.name)}</span><small>${esc(b.service || '')}${b.barber ? ' with ' + esc(b.barber) : ''}${b.source === 'owner' ? ' · added by you' : ''}</small></div><button type="button" class="link" data-a="cancel" data-id="${esc(b.id)}">Cancel</button></div>`;
+const teamOn = date => S.content.team.filter(b => !b.away && b.days[dow(date)]);
+function slotsFor(date) {
+  const h = S.content.hours; if (!date || !h.days[dow(date)]) return [];
+  const out = []; for (let t = h.start; t + 30 <= h.end; t += 30) out.push(t); return out;
+}
+
+function viewToday() {
+  const t = todayIso(), list = S.bookings.filter(b => b.status === 'accepted' && b.date === t).sort((a, b) => a.time - b.time);
+  const on = teamOn(t).map(b => b.name), h = new Date().getHours(), hi = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  const kc = k => S.eng.outbox.filter(m => m.kind === k && m.status !== 'blocked').length;
+  const big = (n, l, d) => `<div class="stat"><span>${l}</span><b>${n}</b><span>${d}</span></div>`;
+  return `<div class="row" style="justify-content:space-between;align-items:flex-end"><div><h3>${hi}</h3><p>${esc(S.shop.name)} · ${niceDate(t)}</p></div><span class="dry">PRACTICE RUN · NOTHING IS SENT</span></div>
+  <div class="stats"><button type="button" class="stat" data-tab="inbox"><span>New requests</span><b>${newCount()}</b><span>waiting for your answer</span></button><div class="stat"><span>Appointments today</span><b>${list.length}</b><span>${on.length ? 'Working: ' + esc(on.join(', ')) : 'Nobody working'}</span></div><button type="button" class="stat" data-tab="automations"><span>Messages to approve</span><b>${draftCount()}</b><span>drafted, nothing sent</span></button></div>
+  <div class="stats">${big(kc('review'), 'Review requests', 'drafted so far')}${big(kc('reminder'), 'Appointment reminders', 'drafted so far')}${big(kc('missed') + kc('inquiry'), 'Missed calls and inquiries', 'text-backs drafted')}${big(kc('winback'), 'Win-back notes', 'drafted so far')}</div>
+  <div class="card"><h4>Today's appointments</h4>${list.length ? list.map(apptRow).join('') : '<p>Nothing booked yet today.</p>'}</div>`;
+}
+function viewInbox() {
+  const nw = S.bookings.filter(b => b.status === 'new').sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  const done = S.bookings.filter(b => (b.status === 'accepted' || b.status === 'declined') && b.source === 'website').sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 5);
+  const card = b => {
+    const opts = b.barber === 'Anyone' || !b.barber ? `<label class="l">Give it to<select data-pick="${esc(b.id)}">${teamOn(b.date).map(x => `<option>${esc(x.name)}</option>`).join('') || '<option value="">Nobody working that day</option>'}</select></label>` : '';
+    return `<div class="req"><div><b>${esc(b.name)}</b> <span class="fine">${esc(b.phone)}</span></div>
+      <p>${esc(b.service)} · ${niceDate(b.date)} at ${E.tLabel(b.time)} · asked for ${b.barber && b.barber !== 'Anyone' ? esc(b.barber) : 'anyone'}</p>
+      <p class="fine">${b.consent ? 'Agreed to text reminders.' : 'No text consent. Do not text.'} Nothing is booked until you accept.</p>${opts}
+      <div class="row"><button class="btn small" type="button" data-a="accept" data-id="${esc(b.id)}">Accept</button><button class="btn ghost small" type="button" data-a="decline" data-id="${esc(b.id)}">Decline</button></div></div>`;
+  };
+  return `<div><h3>Requests</h3><p>Booking requests from your website. You decide; the system never books by itself.</p></div><div class="err" role="alert">${esc(S.err)}</div>
+  ${nw.length ? nw.map(card).join('') : '<div class="card"><p>No new requests. When a customer sends one from your website it shows here.</p></div>'}
+  ${done.length ? `<div class="card"><h4>Recently handled</h4>${done.map(b => `<div class="ap"><div><b>${esc(b.name)}</b><small>${esc(b.service)} · ${niceDate(b.date)} ${E.tLabel(b.time)}</small></div><span class="tag ${b.status}">${b.status === 'accepted' ? 'Accepted' : 'Declined'}</span></div>`).join('')}</div>` : ''}`;
+}
+function busyPanel(f) {
+  if (!f.barber || !f.date) return '';
+  const day = S.bookings.filter(b => b.status === 'accepted' && b.date === f.date && b.barber === f.barber).sort((a, b) => a.time - b.time);
+  const st = f.time === '' || f.time == null ? null : +f.time, en = f.end ? +f.end : (st != null ? st + (((S.content.services[+f.service] || {}).mins) || 30) : null);
+  const clash = st != null ? overlapsWith(f.date, f.barber, st, en) : [];
+  const list = day.length ? day.map(b => `<span class="tag ${st != null && clash.includes(b) ? 'bad' : ''}">${rangeLabel(b)} \u00b7 ${esc(b.name)}</span>`).join(' ') : '<span class="fine">Free all day.</span>';
+  return `<div style="display:flex;flex-direction:column;gap:6px"><div class="fine"><b>${esc(f.barber)}</b> on ${niceDate(f.date)}: ${day.length ? 'already booked' : ''}</div><div class="row">${list}</div>${clash.length ? `<div class="err" style="color:#8A5A00">Heads up: this overlaps with ${clash.map(b => esc(b.name) + ' at ' + E.tLabel(b.time)).join(', ')}. You can still add it.</div>` : ''}</div>`;
+}
+function viewAppointments() {
+  const sel = S.date, wk = monday(E.fromIso(sel)), strip = []; for (let i = 0; i < 7; i++) strip.push(E.iso(addDays(wk, i)));
+  const count = d => S.bookings.filter(b => b.status === 'accepted' && b.date === d).length;
+  const dayBtns = strip.map((d, i) => `<button type="button" class="dayb ${d === sel ? 'on' : ''}" data-a="date" data-d="${d}"><span>${D[i]}</span><b>${E.fromIso(d).getDate()}</b><small>${count(d) ? count(d) + ' booked' : ' '}</small></button>`).join('');
+  const cols = S.content.team.map(b => {
+    const works = !b.away && b.days[dow(sel)];
+    const list = S.bookings.filter(x => x.status === 'accepted' && x.date === sel && x.barber === b.name).sort((a, c) => a.time - c.time);
+    return `<div class="bcol ${works ? '' : 'off'}"><div class="bh"><b>${esc(b.name)}</b><small>${works ? esc(b.role || '') : 'Not working'}</small></div>${works ? (list.length ? list.map(apptRow).join('') : '<p class="fine">Free all day.</p>') : ''}</div>`;
+  }).join('');
+  const f = S.form, bo = teamOn(f.date);
+  if (!bo.some(b => b.name === f.barber)) f.barber = bo.length ? bo[0].name : '';
+  const svc = S.content.services;
+  return `<h3>Appointments</h3>
+  <div class="card"><div class="wkbar"><button type="button" class="btn ghost small" data-a="week" data-n="-1">← Last week</button><b>${niceDate(E.iso(wk))} – ${niceDate(strip[6])}</b><button type="button" class="btn ghost small" data-a="week" data-n="1">Next week →</button></div>
+  <div class="strip">${dayBtns}</div><div class="bcols">${cols || '<p>Add your team in the Team tab.</p>'}</div></div>
+  <div class="card"><div><h4>Add an appointment</h4><p>For someone who called or walked in. Only appointments you add or accept get reminders.</p></div>
+    <div class="form2"><label class="l">Customer name<input type="text" data-f="name" maxlength="60" value="${esc(f.name)}"></label>
+    <label class="l">Mobile number<input type="tel" data-f="phone" maxlength="20" value="${esc(f.phone)}" placeholder="(905) 555-0100"></label>
+    <label class="l">Service<select data-f="service">${svc.length ? svc.map((s, i) => `<option value="${i}" ${+f.service === i ? 'selected' : ''}>${esc(s.name)}${s.price ? ' · $' + esc(s.price) : ''}</option>`).join('') : '<option value="">(add services in the Website tab)</option>'}</select></label>
+    <label class="l">Date<input type="date" data-f="date" data-rerender="1" value="${esc(f.date)}"></label>
+    <label class="l">Barber<select data-f="barber">${bo.length ? bo.map(b => `<option ${f.barber === b.name ? 'selected' : ''}>${esc(b.name)}</option>`).join('') : '<option value="">Nobody working that day</option>'}</select></label>
+    <label class="l">Start time<input type="time" data-f="time" value="${esc(toHHMM(f.time))}" step="60"></label>
+    <label class="l">End time (optional)<input type="time" data-f="end" value="${esc(toHHMM(f.end))}" step="60"></label></div>
+    ${busyPanel(f)}
+    <label class="consent"><input type="checkbox" data-f="consent" ${f.consent ? 'checked' : ''}><span>This customer agreed to get text reminders. We save this as proof. Without the tick, no texts are sent to them.</span></label>
+    <div class="err" role="alert">${esc(S.err)}</div><div class="status">${esc(S.msg)}</div>
+    <div class="row"><button class="btn small" type="button" data-a="addAppt">Add appointment</button></div></div>`;
+}
+function viewTeam() {
+  const rows = S.content.team.map((b, i) => `<div class="trow">
+    <div class="thead"><div class="avatar">${esc(b.name.charAt(0))}</div><div><b>${esc(b.name)}</b><small>${b.away ? 'Away. Left out of the booking choices.' : 'Takes bookings'}</small></div>
+      <button class="sw" type="button" role="switch" data-a="away" data-i="${i}" aria-checked="${!b.away}" aria-label="Takes bookings: ${esc(b.name)}"><i></i></button></div>
+    <div class="dgrid">${D.map((d, k) => `<button type="button" data-a="day" data-i="${i}" data-k="${k}" aria-pressed="${!!b.days[k]}" class="${b.days[k] ? 'on' : ''}">${d}</button>`).join('')}</div>
+    <div><button type="button" class="link" data-a="removeBarber" data-i="${i}">Remove ${esc(b.name)}</button></div></div>`).join('');
+  return `<div><h3>Team</h3><p>Your barbers and the days they work. Customers on your website are only offered barbers who are working that day.</p></div>
+  <div class="card">${rows || '<p>No barbers yet.</p>'}<div class="row" style="margin-top:14px"><input type="text" id="newBarber" maxlength="40" placeholder="First name" aria-label="New barber name" style="max-width:260px"><button class="btn small" type="button" data-a="addBarber">Add barber</button></div><div class="err">${esc(S.err)}</div></div>`;
+}
+const timeOpts = (sel) => { let o = ''; for (let t = 360; t <= 1380; t += 30) o += `<option value="${t}" ${t === sel ? 'selected' : ''}>${E.tLabel(t)}</option>`; return o; };
+function viewWebsite() {
+  const c = S.content, h = c.hours;
+  const socials = PLATFORMS.map(([k, n, ph]) => { const s = c.socials[k] || { on: false, url: '' }; return `<div class="autorow"><div style="flex:1;min-width:0"><b>${n}</b><input type="text" data-soc="${k}" value="${esc(s.url)}" placeholder="${esc(ph)}" maxlength="200" ${s.on ? '' : 'disabled'} aria-label="${n} link"></div><button class="sw" type="button" role="switch" data-a="soc" data-k="${k}" aria-checked="${!!s.on}" aria-label="Show ${n}"><i></i></button></div>`; }).join('');
+  const svc = c.services.map((s, i) => `<div class="ap"><div><b>${esc(s.name)}</b><small>${s.mins} min · $${esc(s.price)}</small></div><button type="button" class="link" data-a="rmsvc" data-i="${i}">Remove</button></div>`).join('');
+  return `<div><h3>Website</h3><p>What customers see on your website. Changes show on the site right away.</p></div>
+  <div class="card"><h4>About your shop</h4><div class="form2"><label class="l">Tagline<input type="text" data-c="tagline" maxlength="120" value="${esc(c.tagline)}"></label><label class="l">Phone<input type="tel" data-c="phone" maxlength="20" value="${esc(c.phone)}"></label><label class="l">Address<input type="text" data-c="address" maxlength="120" value="${esc(c.address)}"></label></div>
+  <p class="fine">Your address also goes in the footer of every text message the system writes.</p><div class="row"><button class="btn small" type="button" data-a="saveAbout">Save</button></div></div>
+  <div class="card"><h4>Opening hours</h4><div class="dgrid">${D.map((d, k) => `<button type="button" data-a="open" data-k="${k}" class="${h.days[k] ? 'on' : ''}" aria-pressed="${!!h.days[k]}">${d}</button>`).join('')}</div>
+    <div class="form2"><label class="l">Opens<select data-h="start">${timeOpts(h.start)}</select></label><label class="l">Closes<select data-h="end">${timeOpts(h.end)}</select></label></div></div>
+  <div class="card"><h4>Services and prices</h4>${svc || '<p>No services yet.</p>'}
+    <div class="form2"><label class="l">Service<input type="text" id="svN" maxlength="60" placeholder="Haircut"></label><label class="l">Minutes<input type="number" id="svM" min="15" max="300" step="15" value="30"></label><label class="l">Price ($)<input type="number" id="svP" min="0" max="9999" step="1" value="30"></label></div>
+    <div class="row"><button class="btn small" type="button" data-a="addsvc">Add service</button></div></div>
+  <div class="card"><h4>Social links</h4><p class="fine">Switch on the ones you use. They appear at the top of your website.</p>${socials}<div class="row"><button class="btn small" type="button" data-a="saveSoc">Save links</button></div></div>
+  <div class="err" role="alert">${esc(S.err)}</div><div class="status" role="status">${esc(S.msg)}</div>`;
+}
+const msgBox = m => `<div class="eng-msg ${m.status}"><div class="h"><span>${esc(E.KINDS[m.kind])} to ${esc(m.to)}</span><span>${niceDate(E.dayIso(m.day))}${m.status === 'released' ? ' · approved (practice)' : ''}</span></div><div class="t">${esc(m.text)}</div>${m.reason ? `<div class="why">Blocked: ${esc(m.reason)}</div>` : ''}</div>`;
+function viewAutomations() {
+  const st = S.eng, drafts = st.outbox.filter(m => m.status === 'draft'), bl = st.outbox.filter(m => m.status === 'blocked'), rel = st.outbox.filter(m => m.status === 'released');
+  const rows = Object.keys(E.KINDS).map(k => { const n = st.outbox.filter(m => m.kind === k && m.status !== 'blocked').length, on = st.on[k]; return `<div class="autorow"><div><b>${E.INFO[k][0]}</b><small>${E.INFO[k][1]}</small><em>${on ? n + ' drafted so far' : 'Paused'}</em></div><button type="button" class="sw" role="switch" aria-checked="${on}" aria-label="${(on ? 'Turn off ' : 'Turn on ') + E.INFO[k][0]}" data-a="ton" data-k="${k}"><i></i></button></div>`; }).join('');
+  return `<div><h3>Automations</h3><p>Fed by your real appointments. It writes the messages and checks consent. Nothing is sent yet in this practice run.</p></div>
+  <div class="card"><div class="row" style="justify-content:space-between"><span class="dry">PRACTICE RUN · NOTHING IS SENT</span><span class="fine">${st.sim ? 'Previewing ' + niceDate(E.dayIso(E.dayNum(todayIso()) + st.sim)) : 'Last checked ' + (st.lastCheck ? new Date(st.lastCheck).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'just now')}</span></div>
+    <div class="autorow"><div><b>Runs by itself</b><small>It checks your appointments, calls and customers on its own, every minute while this page is open, and writes the right message at the right time. Nobody has to press anything.</small><em>${esc(st.msg)}</em></div></div>
+    <div class="autorow"><div><b>Send without asking me</b><small>Off: every batch waits for your OK. On: approved automatically (still practice, nothing is sent).</small></div><button type="button" class="sw" data-a="auto" role="switch" aria-checked="${st.auto}" aria-label="Send without asking me"><i></i></button></div>
+    <div class="row"><button class="btn ghost small" type="button" data-a="previewDay">Preview tomorrow</button><button class="btn ghost small" type="button" data-a="resetEng">Back to today and clear</button></div></div>
+  <div class="two">
+  <div class="card"><div><div class="row" style="justify-content:space-between"><h4>Waiting for your OK</h4><span class="dry">${drafts.length} message${drafts.length === 1 ? '' : 's'}</span></div><p class="fine">While you are getting to know the system, every new batch of messages stops here first.</p></div>${drafts.length ? drafts.slice(-8).map(msgBox).join('') : '<p>No drafts. Accept an appointment in Requests and the Engine writes what is due by itself.</p>'}
+    ${drafts.length ? `<div class="row"><button class="btn small" type="button" data-a="approve">Approve all ${drafts.length}</button><button class="btn ghost small" type="button" data-a="declineAll">Decline all</button></div>` : ''}</div>
+  <div class="card"><h4>Your automations</h4>${rows}</div></div>
+  <div class="card"><h4>Approved (${rel.length})</h4><p class="fine">Ready to go out. In this practice run nothing is actually sent.</p>${rel.length ? rel.slice(-5).reverse().map(msgBox).join('') : '<p>Nothing approved yet.</p>'}</div>
+  <div class="card"><h4>Stopped by the rules (${bl.length})</h4><p class="fine">Messages the consent rules blocked, so nothing illegal goes out.</p>${bl.length ? bl.slice(-6).map(msgBox).join('') : '<p>Nothing blocked yet.</p>'}</div>`;
+}
+function viewCustomers() {
+  const today = E.dayNum(todayIso()) + S.eng.sim, cs = E.contacts(S.eng, S.bookings);
+  const opt = a => a.map(o => `<option value="${o[0]}">${o[1]}</option>`).join('');
+  const people = cs.map(c => {
+    const why = E.consentCheck(c, today);
+    const st = c.stop ? 'unsubscribed' : c.consent === 'none' ? 'no consent' : c.consent === 'express' ? 'said yes to texts' : 'implied consent (' + c.basis + ')' + (why ? ' · expired' : '');
+    return `<div class="ap"><div><b>${esc(c.name)}</b><small>${st}${c.apptDay !== null ? ' · appointment ' + niceDate(E.dayIso(c.apptDay)) : ''}${c.id.startsWith('bk-') ? (c.barber ? ' · ' + esc(c.barber) : '') : c.id.startsWith('ld') ? ' · ' + (c.status === 'missed' ? 'missed call' : 'inquiry') : ' · made up'}</small></div>${c.stop ? '' : `<button type="button" class="link" data-a="stop" data-id="${esc(c.id)}">Replies STOP</button>`}</div>`;
+  }).join('');
+  return `<div><h3>Customers</h3><p>Everyone with an accepted appointment, plus anyone you log below.</p></div>
+  <div class="card"><h4>Customer list</h4>${people || '<p>No customers yet. Accept a request and they appear here.</p>'}</div>
+  <div class="two"><div class="card"><div><h4>Log a missed call or an inquiry</h4><p class="fine">Someone called and nobody answered, or asked a question. The Engine writes the text-back by itself (and a follow-up two days later for an inquiry).</p></div>
+    <div class="form2"><label class="l">Name<input type="text" id="ln" maxlength="24" placeholder="First name"></label><label class="l">Phone<input type="tel" id="lp" maxlength="20" placeholder="905 555 0100"></label><label class="l">What happened<select id="lt">${opt([['missed', 'Missed call'], ['inquiry', 'Inquiry (message, DM or form)']])}</select></label></div>
+    <div class="row"><button class="btn small" type="button" data-a="addlead">Log it</button></div></div>
+  <div class="card"><div><h4>Add a made-up customer to test</h4><p class="fine">For trying the rules without real people.</p></div>
+    <div class="form2"><label class="l">Name<input type="text" id="tn" maxlength="24" placeholder="First name"></label>
+    <label class="l">Consent<select id="tc">${opt([['express', 'Said yes (express consent)'], ['implied', 'Recent customer (implied consent)'], ['old', 'Customer from long ago (consent expired)'], ['none', 'No consent on record']])}</select></label>
+    <label class="l">What happens<select id="te">${opt([['visit', 'Visits today'], ['appt24', 'Has an appointment tomorrow'], ['appt2h', 'Has an appointment today'], ['lapsed', 'Last visit was 6 weeks ago'], ['inquiry', 'Sends an inquiry today'], ['missed', 'Calls today and nobody answers']])}</select></label></div>
+    <div class="row"><button class="btn small" type="button" data-a="addtest">Add customer</button></div></div></div>`;
+}
+function viewAccount() {
+  return `<div><h3>My login</h3><p>Your sign-in email is <b>${esc(S.user.email)}</b>. Change your password or your email here.</p></div>
+  <form class="card" id="pwForm"><h4>Change password</h4><div class="form2"><label class="l">Current password<input type="password" id="cpw" autocomplete="current-password" maxlength="100" required></label><label class="l">New password (at least 10 characters)<input type="password" id="npw" autocomplete="new-password" maxlength="100" required></label></div>
+    <div class="err" role="alert">${esc(S.err)}</div><div class="status">${esc(S.msg)}</div><div class="row"><button class="btn small" type="submit">Save password</button></div></form>
+  <form class="card" id="emForm"><h4>Change email</h4><div class="form2"><label class="l">New email<input type="email" id="nem" maxlength="120" required></label><label class="l">Current password<input type="password" id="epw" autocomplete="current-password" maxlength="100" required></label></div>
+    <p class="fine">We email the new address to confirm the change.</p><div class="row"><button class="btn small" type="submit">Change email</button></div></form>`;
+}
+function loginView() {
+  if (S.recovery) return `<div class="login"><div class="brandL">Choose a new password</div><form class="card" id="recForm"><label class="l">New password (at least 10 characters)<input type="password" id="rpw" autocomplete="new-password" maxlength="100" required></label><div class="err" role="alert">${esc(S.loginErr)}</div><button class="btn" type="submit">Save and sign in</button></form></div>`;
+  return `<div class="login"><div class="brandL">Owner control panel</div><form class="card" id="loginForm"><h3 style="font-size:28px">Sign in</h3>
+    <label class="l">Email<input type="email" id="em" autocomplete="username" maxlength="120" value="${esc(S.em)}" required></label>
+    <label class="l">Password<input type="password" id="pw" autocomplete="current-password" maxlength="100" required></label>
+    <div class="err" role="alert">${esc(S.loginErr)}</div><div class="status">${esc(S.info)}</div>
+    <button class="btn" type="submit" ${S.busy ? 'disabled' : ''}>Sign in</button><button class="link" type="button" data-a="forgot">Forgot password?</button>
+    <p class="fine">Your provider created your login. There is no sign-up here.</p></form></div>`;
+}
+function suspended() {
+  return `<div class="top"><b>Owner control panel</b><button class="btn ghost small" type="button" data-a="logout">Log out</button></div><div class="login"><div class="card"><h3 style="font-size:28px">This service is paused</h3><p>Your access is currently switched off. Please contact your provider to get it going again.</p></div></div>`;
+}
+
+function render() {
+  const keep = document.activeElement && document.activeElement.id;
+  if (S.recovery || !S.user) { app.innerHTML = loginView(); return; }
+  if (S.noAccess === 'admin') { app.innerHTML = `<div class="login"><div class="card"><h3 style="font-size:28px">You are signed in as admin</h3><p>This page is for shop owners. To look inside a client's space, open it from the admin page.</p><a class="btn" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center" href="hq-k7m2/index.html">Go to the admin page</a><button class="btn ghost" data-a="logout">Log out</button></div></div>`; return; }
+  if (S.noAccess) { app.innerHTML = `<div class="login"><div class="card"><p>${esc(S.noAccess)}</p><button class="btn ghost" data-a="logout">Log out</button></div></div>`; return; }
+  if (!S.asAdmin && !live('ai') && !live('site')) { app.innerHTML = suspended(); return; }
+  const v = { today: viewToday, appointments: viewAppointments, inbox: viewInbox, automations: viewAutomations, customers: viewCustomers, team: viewTeam, website: viewWebsite, account: viewAccount };
+  if (!tabs().includes(S.tab)) S.tab = firstTab();
+  app.innerHTML = shell(v[S.tab]());
+  if (keep) { const el = document.getElementById(keep); if (el) el.focus(); }
+}
+
+/* ---------------- actions ---------------- */
+const err = m => { S.err = m; S.msg = ''; };
+async function updateBooking(id, patch) {
+  const { error } = await sb.from('bookings').update(patch).eq('id', id).eq('shop_id', S.shop.id);
+  if (error) return err('Could not update: ' + error.message);
+  const b = S.bookings.find(x => x.id === id); if (b) Object.assign(b, patch);
+  S.err = ''; engAuto(false);
+}
+const ACT = {
+  logout: async () => { await sb.auth.signOut(); location.reload(); },
+  forgot: async () => {
+    const em = ($('#em') || {}).value || ''; S.em = em; S.loginErr = ''; S.info = '';
+    if (!/^\S+@\S+\.\S+$/.test(em)) { S.loginErr = 'Type your email above first, then press "Forgot password?".'; return; }
+    await sb.auth.resetPasswordForEmail(em.trim(), { redirectTo: location.origin + location.pathname });
+    S.info = 'If that email has a login, a message to reset the password is on its way.';
+  },
+  date: (_, el) => { S.date = el.dataset.d; },
+  week: (_, el) => { S.date = E.iso(addDays(E.fromIso(S.date), 7 * +el.dataset.n)); },
+  accept: async (_, el) => {
+    const id = el.dataset.id, b = S.bookings.find(x => x.id === id), patch = { status: 'accepted' };
+    const pick = document.querySelector(`[data-pick="${CSS.escape(id)}"]`);
+    if (pick) { if (!pick.value) return err('Nobody is working that day. Decline it or change the team days.'); patch.barber = pick.value; }
+    await updateBooking(id, patch);
+  },
+  decline: async (_, el) => { await updateBooking(el.dataset.id, { status: 'declined' }); },
+  cancel: async (_, el) => { await updateBooking(el.dataset.id, { status: 'cancelled' }); },
+  addAppt: async () => {
+    document.querySelectorAll('[data-f]').forEach(i => { S.form[i.dataset.f] = formVal(i); });
+    const f = S.form, svc = S.content.services[+f.service] || null, digits = String(f.phone).replace(/\D/g, '');
+    if (!f.name.trim()) return err('Enter the customer name.');
+    if (digits.length < 7) return err('Enter a valid mobile number.');
+    if (!f.barber) return err('Pick a barber who is working that day.');
+    const st = f.time === '' || f.time == null ? null : +f.time, en = f.end ? +f.end : null;
+    if (st == null || isNaN(st)) return err('Type a start time.');
+    if (en != null && en <= st) return err('The end time must be after the start time.');
+    const rec = { shop_id: S.shop.id, name: f.name.trim().slice(0, 60), phone: String(f.phone).trim().slice(0, 20), service: svc ? svc.name : '', price: svc ? Number(svc.price) || 0 : 0, barber: f.barber, date: f.date, time: st, end_time: en, status: 'accepted', source: 'owner', consent: !!f.consent };
+    const { data, error } = await sb.from('bookings').insert(rec).select().single();
+    if (error) return err('Could not add: ' + error.message);
+    S.bookings.push(data); S.form = { name: '', phone: '', barber: f.barber, date: f.date, time: '', end: '', consent: false, service: f.service };
+    S.err = ''; S.msg = 'Added. The Engine picked it up.'; engAuto(false);
+  },
+  away: async (_, el) => { const b = S.content.team[+el.dataset.i]; b.away = !b.away; await saveContent('Saved.'); },
+  day: async (_, el) => { const b = S.content.team[+el.dataset.i], k = +el.dataset.k; b.days[k] = !b.days[k]; await saveContent('Saved.'); },
+  removeBarber: async (_, el) => { S.content.team.splice(+el.dataset.i, 1); await saveContent('Saved.'); },
+  addBarber: async () => {
+    const n = ($('#newBarber').value || '').trim().slice(0, 40); if (!n) return err('Type a first name.');
+    S.content.team.push({ id: 'b' + Date.now().toString(36), name: n, role: 'Barber', days: [true, true, true, true, true, true, false], away: false }); await saveContent('Saved.');
+  },
+  saveAbout: async () => { document.querySelectorAll('[data-c]').forEach(i => { S.content[i.dataset.c] = i.value.trim(); }); await saveContent('Saved. Your website is updated.'); },
+  open: async (_, el) => { const k = +el.dataset.k; S.content.hours.days[k] = !S.content.hours.days[k]; await saveContent('Saved.'); },
+  addsvc: async () => {
+    const n = ($('#svN').value || '').trim().slice(0, 60), m = Math.max(15, Math.min(300, +$('#svM').value || 30)), p = Math.max(0, Math.min(9999, +$('#svP').value || 0));
+    if (!n) return err('Type the service name.'); S.content.services.push({ name: n, mins: m, price: p }); await saveContent('Saved.');
+  },
+  rmsvc: async (_, el) => { S.content.services.splice(+el.dataset.i, 1); await saveContent('Saved.'); },
+  soc: (_, el) => { document.querySelectorAll('[data-soc]').forEach(i => { const q = i.dataset.soc, z = S.content.socials[q] || (S.content.socials[q] = { on: false, url: '' }); z.url = i.value.trim().slice(0, 200); }); const k = el.dataset.k, s = S.content.socials[k] || (S.content.socials[k] = { on: false, url: '' }); s.on = !s.on; },
+  saveSoc: async () => {
+    document.querySelectorAll('[data-soc]').forEach(i => { const k = i.dataset.soc, s = S.content.socials[k] || (S.content.socials[k] = { on: false, url: '' }); s.url = i.value.trim().slice(0, 200); });
+    await saveContent('Saved. Your website is updated.');
+  },
+  ton: (_, el) => { S.eng.on[el.dataset.k] = !S.eng.on[el.dataset.k]; engAuto(false); engSave(); },
+  auto: () => { S.eng.auto = !S.eng.auto; if (S.eng.auto) { engAuto(false); } engSave(); },
+  previewDay: () => { S.eng.sim++; const today = E.dayNum(todayIso()) + S.eng.sim; const [m, b] = E.runFor(S.eng, S.bookings, shopForEngine(), today); S.eng.msg = `Preview of ${niceDate(E.dayIso(today))}: ${m} drafted, ${b} blocked by the rules.`; engSave(); },
+  resetEng: () => { S.eng.sim = 0; S.eng.outbox = []; S.eng.stops = {}; S.eng.msg = 'Practice data reset to today.'; engSave(); },
+  approve: () => { const n = E.decide(S.eng, 'released'); S.eng.msg = `${n} drafts approved (practice run, nothing was sent).`; engSave(); },
+  declineAll: () => { const n = E.decide(S.eng, 'declined'); S.eng.msg = `${n} drafts declined.`; engSave(); },
+  stop: (_, el) => { const c = E.stop(S.eng, S.bookings, el.dataset.id); if (c) { S.eng.msg = c.name + ' replied STOP. No more messages to them.'; engSave(); } },
+  addlead: () => { const today = E.dayNum(todayIso()) + S.eng.sim, c = E.addLead(S.eng, today, $('#ln').value.trim(), $('#lp').value, $('#lt').value); engAuto(false); S.eng.msg = c.name + ' logged. The Engine picked it up by itself.'; engSave(); },
+  addtest: () => { const today = E.dayNum(todayIso()) + S.eng.sim; E.addTest(S.eng, today, $('#tn').value.trim(), $('#tc').value, $('#te').value); engAuto(false); engSave(); }
+};
+
+document.addEventListener('click', async ev => {
+  const tb = ev.target.closest('[data-tab]');
+  if (tb) { S.tab = tb.dataset.tab; S.err = ''; S.msg = ''; render(); return; }
+  const el = ev.target.closest('[data-a]'); if (!el) return;
+  const fn = ACT[el.dataset.a]; if (!fn) return;
+  el.disabled = true;
+  try { await fn(ev, el); } catch (e) { S.err = String(e.message || e); }
+  render();
+});
+const formVal = i => i.type === 'checkbox' ? i.checked : (i.type === 'time' ? toMin(i.value) : i.value);
+document.addEventListener('input', ev => {
+  const t = ev.target;
+  if (t.dataset && t.dataset.f) {
+    S.form[t.dataset.f] = formVal(t);
+  }
+  if (t.dataset && t.dataset.h) { S.content.hours[t.dataset.h] = +t.value; saveContent('Saved.').then(render); }
+});
+document.addEventListener('change', ev => { const t = ev.target, k = t.dataset && t.dataset.f; if (!k) return; S.form[k] = formVal(t); if (k === 'date') S.form.barber = ''; if (['date', 'barber', 'time', 'end', 'service'].includes(k)) render(); });
+document.addEventListener('submit', async ev => {
+  ev.preventDefault(); const id = ev.target.id;
+  if (id === 'loginForm') {
+    S.busy = true; S.loginErr = ''; S.info = ''; S.em = $('#em').value.trim();
+    const { error } = await sb.auth.signInWithPassword({ email: $('#em').value.trim(), password: $('#pw').value });
+    S.busy = false;
+    if (error) { S.loginErr = 'That email and password did not match.'; return render(); }
+    await boot();
+  } else if (id === 'recForm') {
+    const pw = $('#rpw').value; if (pw.length < 10) { S.loginErr = 'Use at least 10 characters.'; return render(); }
+    const { error } = await sb.auth.updateUser({ password: pw });
+    if (error) { S.loginErr = error.message; return render(); }
+    S.recovery = false; await boot();
+  } else if (id === 'pwForm') {
+    S.err = ''; S.msg = '';
+    const cur = $('#cpw').value, npw = $('#npw').value;
+    if (npw.length < 10) { S.err = 'Use at least 10 characters.'; return render(); }
+    const { error: e1 } = await sb.auth.signInWithPassword({ email: S.user.email, password: cur });
+    if (e1) { S.err = 'Your current password is not right.'; return render(); }
+    const { error } = await sb.auth.updateUser({ password: npw });
+    if (error) S.err = error.message; else S.msg = 'Password changed.';
+    render();
+  } else if (id === 'emForm') {
+    S.err = ''; S.msg = '';
+    const em = $('#nem').value.trim().toLowerCase(), cur = $('#epw').value;
+    const { error: e1 } = await sb.auth.signInWithPassword({ email: S.user.email, password: cur });
+    if (e1) { S.err = 'Your current password is not right.'; return render(); }
+    const { error } = await sb.auth.updateUser({ email: em });
+    if (error) S.err = error.message; else S.msg = 'Check the new email for a confirmation message.';
+    render();
+  }
+});
+setInterval(() => { if (S.shop && document.visibilityState === 'visible') reloadBookings().then(() => { if (!document.activeElement || !/INPUT|SELECT/.test(document.activeElement.tagName)) render(); }); }, 45000);
+boot().catch(e => { app.innerHTML = '<div class="login"><div class="card"><p>Something went wrong loading the panel: ' + esc(e.message || e) + '</p></div></div>'; });
+</script>
+</body>
+</html>

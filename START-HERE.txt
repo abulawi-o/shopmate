@@ -1,0 +1,15 @@
+LEO app (test copy)
+1. Unzip this folder anywhere on your Mac.
+2. Open  hq-k7m2/index.html  (double-click). Sign in with YOUR admin email and password.
+3. Add a client (use a test name and one of your own emails). A temporary password shows once.
+4. Open  owner.html  in a new tab and sign in with that client's email and the temporary password.
+5. Open  index.html?shop=PASTE-THE-SHOP-ID  to see that shop's website (the shop ID is in the address when you press "Open their space").
+
+
+GOING ONLINE (Cloudflare Pages, free)
+1. Make a free account at cloudflare.com (you do this yourself).
+2. Workers & Pages > Create > Pages > Upload assets. Drag this whole folder in. Name it, Deploy.
+3. You get an address like leo-xxxx.pages.dev. Admin: that address + /hq-k7m2/  Owner login: + /owner.html
+4. For a client's own domain: in Cloudflare Pages > Custom domains, add it, then type the same domain in the
+   "Website domain" box on that client's row in your admin page. The site shows that client's website.
+5. The automation timer already runs on its own on the server every 10 minutes (no need to keep a page open).

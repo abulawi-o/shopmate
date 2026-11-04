@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Barber shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:wght@600;700&display=swap">
+<style>
+:root{--bg:#14110F;--bg2:#1D1915;--fg:#F4EEE4;--muted:#B9AE9E;--brass:#C9A25A;--line:#2E2822;--danger:#F0A39C;--display:'Fraunces',Georgia,serif;--sans:'DM Sans',system-ui,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1040px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:18px 0}
+.logo{font:700 22px var(--display);letter-spacing:.01em}
+.socials{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.socials a{color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:14px}
+.socials a:hover{border-color:var(--brass);color:var(--brass)}
+.btn{display:inline-flex;align-items:center;justify-content:center;background:var(--brass);color:#1B140A;border:0;border-radius:12px;min-height:48px;padding:0 24px;font-weight:700;font-size:16px;cursor:pointer;text-decoration:none}
+.btn.ghost{background:none;color:var(--fg);border:1px solid var(--line)}
+.hero{padding:7vh 0 6vh}
+.hero h1{font:700 clamp(40px,8vw,84px)/1.02 var(--display);margin:0 0 14px;text-wrap:balance}
+.hero p{font-size:clamp(17px,2.4vw,21px);color:var(--muted);max-width:34em;margin:0 0 24px}
+section{padding:34px 0;border-top:1px solid var(--line)}
+h2{font:600 30px var(--display);margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:18px}
+.card b{display:block;font-size:17px}
+.card small{color:var(--muted)}
+.price{font:600 26px var(--display);color:var(--brass)}
+.svc{display:flex;justify-content:space-between;gap:12px;align-items:center;border-top:1px solid var(--line);padding:14px 0}.svc:first-of-type{border-top:0}
+.hours{display:grid;grid-template-columns:auto 1fr;gap:6px 24px;max-width:320px}
+footer{padding:28px 0 60px;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.65);display:grid;place-items:end center;z-index:20;padding:0}
+.sheet[hidden]{display:none}
+.panel{background:var(--bg2);border:1px solid var(--line);border-radius:20px 20px 0 0;width:min(560px,100%);max-height:92vh;overflow:auto;padding:22px max(16px,env(safe-area-inset-left,0px)) max(24px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+@media(min-width:700px){.sheet{place-items:center}.panel{border-radius:20px}}
+label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+input,select{min-height:48px;border-radius:10px;border:1px solid #433A31;background:#14110F;color:var(--fg);padding:0 12px;font-size:16px;width:100%}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.opts button{min-height:44px;border-radius:10px;border:1px solid #433A31;background:#14110F;color:var(--fg);cursor:pointer;font-size:14px}
+.opts button.on{background:var(--brass);color:#1B140A;border-color:var(--brass);font-weight:700}
+.consent{flex-direction:row;gap:10px;align-items:flex-start}.consent input{width:20px;min-height:20px;margin-top:3px}
+.err{color:var(--danger);font-size:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><p style="text-align:center;margin-top:25vh;color:#B9AE9E">Loading…</p></div>
+<div class="sheet" id="sheet" hidden><div class="panel" id="panel"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sb = supabase.createClient(LEO.url, LEO.key, { auth: { persistSession: false, autoRefreshToken: false } });
+const shopId = LEO.shopId || new URLSearchParams(location.search).get('shop') || '';
+const D = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const tLabel = m => { const h = Math.floor(m / 60), mm = m % 60; return (h % 12 || 12) + ':' + String(mm).padStart(2, '0') + ' ' + (h >= 12 ? 'PM' : 'AM'); };
+const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const dow = d => (d.getDay() + 6) % 7;
+const URLFIX = u => /^https?:\/\//i.test(u) ? u : 'https://' + u;
+let INFO = null, C = null, SHOP = '';
+const BK = { open: false, svc: 0, barber: 'Anyone', day: 0, time: null, name: '', phone: '', consent: false, err: '', done: false, busy: false };
+
+async function boot() {
+  const app = $('#app');
+  // which shop is this? the shop ID if given (?shop= or config.js), otherwise the domain name the visitor came to
+  const { data, error } = shopId ? await sb.rpc('site_info', { s: shopId }) : await sb.rpc('site_info_domain', { d: location.hostname });
+  if (error || !data) { app.innerHTML = '<p style="text-align:center;margin-top:25vh">This website is not available right now.</p>'; return; }
+  INFO = data; C = data.content || {}; SHOP = data.id || shopId;
+  document.title = data.name;
+  const hours = C.hours && Array.isArray(C.hours.days) ? C.hours : null;
+  const soc = Object.entries(C.socials || {}).filter(([, s]) => s && s.on && s.url).map(([k, s]) => `<a href="${esc(URLFIX(s.url))}" target="_blank" rel="noopener">${esc(k.charAt(0).toUpperCase() + k.slice(1))}</a>`).join('');
+  const phone = C.phone ? `<a class="btn ghost" href="tel:${esc(String(C.phone).replace(/[^\d+]/g, ''))}">Call ${esc(C.phone)}</a>` : '';
+  const book = data.booking && (C.services || []).length && hours ? '<button class="btn" id="bk" type="button">Request a booking</button>' : '';
+  const services = (C.services || []).map(s => `<div class="svc"><div><b>${esc(s.name)}</b><small>${esc(s.mins)} min</small></div><span class="price">$${esc(s.price)}</span></div>`).join('');
+  const team = (C.team || []).filter(b => !b.away).map(b => `<div class="card"><b>${esc(b.name)}</b><small>${esc(b.role || 'Barber')}</small><br><small>${(b.days || []).map((on, i) => on ? D[i] : null).filter(Boolean).join(' · ')}</small></div>`).join('');
+  const hrs = hours ? `<div class="hours">${D.map((d, i) => `<span>${d}</span><span>${hours.days[i] ? tLabel(hours.start) + ' – ' + tLabel(hours.end) : 'Closed'}</span>`).join('')}</div>` : '';
+  app.innerHTML = `<header><div class="logo">${esc(data.name)}</div><div class="socials">${soc}</div></header>
+  <div class="hero"><h1>${esc(data.name)}</h1><p>${esc(C.tagline || '')}</p><div class="row">${book}${phone}</div></div>
+  ${services ? `<section><h2>Services</h2><div class="card" style="padding:4px 18px">${services}</div></section>` : ''}
+  ${team ? `<section><h2>Your barbers</h2><div class="grid">${team}</div></section>` : ''}
+  ${hrs ? `<section><h2>Hours</h2>${hrs}</section>` : ''}
+  <footer>${esc(data.name)}${C.address ? ' · ' + esc(C.address) : ''}${C.phone ? ' · ' + esc(C.phone) : ''} · <a href="owner.html" style="color:inherit">Owner login</a></footer>`;
+  const b = $('#bk'); if (b) b.addEventListener('click', () => { Object.assign(BK, { open: true, done: false, err: '', day: 0, time: null, barber: 'Anyone' }); for (let i = 0; i < days().length; i++) { BK.day = i; if (slots().length) break; } drawBk(); });
+}
+const days = () => { const out = []; const h = C.hours; for (let i = 0; i < 21 && out.length < 10; i++) { const d = new Date(); d.setDate(d.getDate() + i); if (h.days[dow(d)]) out.push(d); } return out; };
+const barbersFor = d => (C.team || []).filter(b => !b.away && (b.days || [])[dow(d)]);
+const slots = () => { const h = C.hours, out = []; const now = new Date(), d = days()[BK.day]; for (let t = h.start; t + 30 <= h.end; t += 30) { if (iso(d) === iso(now) && t <= now.getHours() * 60 + now.getMinutes() + 30) continue; out.push(t); } return out; };
+function drawBk() {
+  const sheet = $('#sheet'), p = $('#panel');
+  if (!BK.open) { sheet.hidden = true; return; }
+  sheet.hidden = false;
+  if (BK.done) { p.innerHTML = `<h2>Request sent</h2><p>Thanks ${esc(BK.name)}. ${esc(INFO.name)} will confirm your time. Nothing is booked until they accept.</p><button class="btn" type="button" data-x>Close</button>`; return; }
+  const ds = days(), d = ds[BK.day], bar = barbersFor(d), sl = slots();
+  p.innerHTML = `<div class="row" style="justify-content:space-between"><h2 style="margin:0">Request a booking</h2><button class="btn ghost" type="button" data-x aria-label="Close">×</button></div>
+  <label>Service<select data-k="svc">${C.services.map((s, i) => `<option value="${i}" ${BK.svc === i ? 'selected' : ''}>${esc(s.name)} · $${esc(s.price)}</option>`).join('')}</select></label>
+  <div><label>Day</label><div class="opts">${ds.map((x, i) => `<button type="button" data-day="${i}" class="${BK.day === i ? 'on' : ''}">${D[dow(x)]} ${x.getDate()}/${x.getMonth() + 1}</button>`).join('')}</div></div>
+  <label>Barber<select data-k="barber"><option>Anyone</option>${bar.map(b => `<option ${BK.barber === b.name ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select></label>
+  <div><label>Time</label><div class="opts">${sl.length ? sl.map(t => `<button type="button" data-time="${t}" class="${BK.time === t ? 'on' : ''}">${tLabel(t)}</button>`).join('') : '<small>No times left today. Pick another day.</small>'}</div></div>
+  <label>Your name<input type="text" data-k="name" maxlength="60" value="${esc(BK.name)}" autocomplete="name"></label>
+  <label>Mobile number<input type="tel" data-k="phone" maxlength="20" value="${esc(BK.phone)}" autocomplete="tel" placeholder="(905) 555-0100"></label>
+  <label class="consent"><input type="checkbox" data-k="consent" ${BK.consent ? 'checked' : ''}><span>Yes, text me reminders about my appointment. Reply STOP any time to unsubscribe. (Optional.)</span></label>
+  <div class="err" role="alert">${esc(BK.err)}</div>
+  <button class="btn" type="button" data-send ${BK.busy ? 'disabled' : ''}>Send request</button>`;
+}
+document.addEventListener('click', async ev => {
+  const t = ev.target;
+  if (t.closest('[data-x]') || t.id === 'sheet') { BK.open = false; return drawBk(); }
+  if (t.dataset.day != null) { BK.day = +t.dataset.day; BK.time = null; BK.barber = 'Anyone'; return drawBk(); }
+  if (t.dataset.time != null) { BK.time = +t.dataset.time; return drawBk(); }
+  if (t.dataset.send != null) {
+    BK.err = '';
+    const digits = BK.phone.replace(/\D/g, '');
+    if (!BK.name.trim()) BK.err = 'Please enter your name.';
+    else if (digits.length < 7) BK.err = 'Please enter a valid mobile number.';
+    else if (BK.time == null) BK.err = 'Please pick a time.';
+    if (BK.err) return drawBk();
+    const s = C.services[BK.svc], d = days()[BK.day]; BK.busy = true; drawBk();
+    const { error } = await sb.from('bookings').insert({ shop_id: SHOP, name: BK.name.trim().slice(0, 60), phone: BK.phone.trim().slice(0, 20), service: s.name, price: Number(s.price) || 0, barber: BK.barber, date: iso(d), time: BK.time, status: 'new', source: 'website', consent: !!BK.consent });
+    BK.busy = false;
+    if (error) { BK.err = 'Sorry, we could not send that. Please call us instead.'; return drawBk(); }
+    BK.done = true; drawBk();
+  }
+});
+document.addEventListener('input', ev => {
+  const k = ev.target.dataset && ev.target.dataset.k; if (!k) return;
+  BK[k] = k === 'consent' ? ev.target.checked : k === 'svc' ? +ev.target.value : ev.target.value;
+});
+boot();
+</script>
+</body>
+</html>
