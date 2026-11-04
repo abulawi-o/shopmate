@@ -18,7 +18,11 @@
 'use strict';
 const E = Engine, $ = s => document.querySelector(s), app = $('#app');
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const sb = supabase.createClient(LEO.url, LEO.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const lsSet=(k,v)=>{try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+const authStore={getItem:k=>{try{return localStorage.getItem(k)??sessionStorage.getItem(k)}catch(e){return null}},setItem:k=>0,removeItem:k=>{try{localStorage.removeItem(k);sessionStorage.removeItem(k)}catch(e){}}};
+authStore.setItem=(k,v)=>{try{const keep=lsGet('leo_keep')!=='0';(keep?localStorage:sessionStorage).setItem(k,v);(keep?sessionStorage:localStorage).removeItem(k)}catch(e){}};
+const sb = supabase.createClient(LEO.url, LEO.key, { auth: { storage: authStore, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const D = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const todayIso = () => E.iso(new Date());
 const dow = s => (E.fromIso(s).getDay() + 6) % 7;
@@ -39,6 +43,7 @@ const ICO = {
 const TABNAMES = { today: 'Overview', appointments: 'Appointments', inbox: 'Requests', automations: 'Automations', customers: 'Customers', team: 'Team and staff', website: 'Website', account: 'My login' };
 
 const S = { user: null, shop: null, content: null, bookings: [], eng: null, asAdmin: false, recovery: false, tab: 'today', date: todayIso(), form: { name: '', phone: '', barber: '', date: todayIso(), time: '', end: '', consent: false }, msg: '', err: '', loginErr: '', info: '', busy: false, noAccess: '', em: '' };
+S.remember = !!lsGet('leo_email'); S.keep = lsGet('leo_keep') !== '0'; if (S.remember) S.em = lsGet('leo_email') || '';
 const live = k => !!S.shop && S.shop['pkg_' + k] && !S.shop['closed_' + k];
 const has = k => !!S.shop && S.shop['pkg_' + k];
 
@@ -312,7 +317,8 @@ function loginView() {
   return `<div class="login"><div class="brandL">Owner control panel</div><form class="card" id="loginForm"><h3 style="font-size:28px">Sign in</h3>
     <label class="l">Email<input type="email" id="em" autocomplete="username" maxlength="120" value="${esc(S.em)}" required></label>
     <label class="l">Password<input type="password" id="pw" autocomplete="current-password" maxlength="100" required></label>
-    <div class="err" role="alert">${esc(S.loginErr)}</div><div class="status">${esc(S.info)}</div>
+    <div class="chks"><label class="chk"><input type="checkbox" id="rem" ${S.remember ? 'checked' : ''}><span>Remember my email</span></label><label class="chk"><input type="checkbox" id="keep" ${S.keep ? 'checked' : ''}><span>Keep me signed in</span></label></div>
+  <div class="err" role="alert">${esc(S.loginErr)}</div><div class="status">${esc(S.info)}</div>
     <button class="btn" type="submit" ${S.busy ? 'disabled' : ''}>Sign in</button><button class="link" type="button" data-a="forgot">Forgot password?</button>
     <p class="fine">Your provider created your login. There is no sign-up here.</p></form></div>`;
 }
@@ -425,6 +431,7 @@ document.addEventListener('submit', async ev => {
   ev.preventDefault(); const id = ev.target.id;
   if (id === 'loginForm') {
     S.busy = true; S.loginErr = ''; S.info = ''; S.em = $('#em').value.trim();
+    { const rm = $('#rem').checked, kp = $('#keep').checked; lsSet('leo_keep', kp ? '1' : '0'); if (rm) lsSet('leo_email', S.em); else lsSet('leo_email', null); S.remember = rm; S.keep = kp; }
     const { error } = await sb.auth.signInWithPassword({ email: $('#em').value.trim(), password: $('#pw').value });
     S.busy = false;
     if (error) { S.loginErr = 'That email and password did not match.'; return render(); }
