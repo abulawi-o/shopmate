@@ -18,11 +18,16 @@
 'use strict';
 const $ = s => document.querySelector(s), app = $('#app');
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const sb = supabase.createClient(LEO.url, LEO.key, { auth: { persistSession: true, autoRefreshToken: true } });
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const lsSet=(k,v)=>{try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+const authStore={getItem:k=>{try{return localStorage.getItem(k)??sessionStorage.getItem(k)}catch(e){return null}},setItem:k=>0,removeItem:k=>{try{localStorage.removeItem(k);sessionStorage.removeItem(k)}catch(e){}}};
+authStore.setItem=(k,v)=>{try{const keep=lsGet('leo_keep')!=='0';(keep?localStorage:sessionStorage).setItem(k,v);(keep?sessionStorage:localStorage).removeItem(k)}catch(e){}};
+const sb = supabase.createClient(LEO.url, LEO.key, { auth: { storage: authStore, persistSession: true, autoRefreshToken: true } });
 const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const today = () => iso(new Date());
 const plusMonth = s => { const d = s ? new Date(s + 'T00:00:00') : new Date(); d.setMonth(d.getMonth() + 1); return iso(d); };
 const S = { user: null, shops: [], logins: {}, audit: [], err: '', msg: '', reveal: null, loginErr: '', busy: false, filter: '', em: '' };
+S.remember = !!lsGet('leo_email'); S.keep = lsGet('leo_keep') !== '0'; if (S.remember) S.em = lsGet('leo_email') || '';
 
 async function load() {
   const [sh, pr, au] = await Promise.all([
@@ -51,6 +56,7 @@ function loginView() {
   return `<div class="login"><div class="brandL">Platform admin</div><form class="card" id="loginForm"><h3 style="font-size:28px">Sign in</h3>
   <label class="l">Email<input type="email" id="em" autocomplete="username" maxlength="120" value="${esc(S.em)}" required></label>
   <label class="l">Password<input type="password" id="pw" autocomplete="current-password" maxlength="100" required></label>
+  <div class="chks"><label class="chk"><input type="checkbox" id="rem" ${S.remember ? 'checked' : ''}><span>Remember my email</span></label><label class="chk"><input type="checkbox" id="keep" ${S.keep ? 'checked' : ''}><span>Keep me signed in</span></label></div>
   <div class="err" role="alert">${esc(S.loginErr)}</div><button class="btn" type="submit" ${S.busy ? 'disabled' : ''}>Sign in</button></form></div>`;
 }
 const BASE = () => location.protocol === 'file:' ? '../' : location.origin + '/';
@@ -132,7 +138,7 @@ document.addEventListener('input', ev => { if (ev.target.id === 'flt') { S.filte
 document.addEventListener('submit', async ev => {
   ev.preventDefault();
   if (ev.target.id === 'loginForm') {
-    S.em = $('#em').value.trim(); const pwv = $('#pw').value; S.busy = true; S.loginErr = ''; render();
+    S.em = $('#em').value.trim(); { const rm = $('#rem').checked, kp = $('#keep').checked; lsSet('leo_keep', kp ? '1' : '0'); if (rm) lsSet('leo_email', S.em); else lsSet('leo_email', null); S.remember = rm; S.keep = kp; } const pwv = $('#pw').value; S.busy = true; S.loginErr = ''; render();
     const { error } = await sb.auth.signInWithPassword({ email: S.em, password: pwv });
     S.busy = false;
     if (error) { S.loginErr = 'That email and password did not match.'; return render(); }
