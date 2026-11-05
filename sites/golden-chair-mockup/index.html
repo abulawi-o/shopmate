@@ -249,6 +249,31 @@ button,a,input[type=range],.chip{touch-action:manipulation;-webkit-tap-highlight
 .map{min-height:280px}
 footer .big{font-size:clamp(46px,12.5vw,170px)}
 .work h2{max-width:none}
+/* phone comfort: the compact block above is for laptops, phones get room to breathe */
+@media(max-width:820px){
+  #services,.crew,.work,.revs,.book,.visit{--sec:72px}
+  #services h2,.crew h2,.work h2,.book h2,.visit h2{font-size:34px}
+  .lead{font-size:18px;line-height:1.55}
+  .menu li{padding:20px 16px}.menu b{font-size:18px}.menu small{font-size:15px}.menu .p{font-size:30px}
+  .bar3 li{grid-template-columns:minmax(0,1fr);gap:14px;padding-block:30px}
+  .bar3 h3{font-size:44px}.bar3 .role{font-size:17px;margin-bottom:14px}
+  .bar3 .btn{width:100%}
+  .days{gap:8px}.days i{width:36px;height:36px;font-size:14px;flex:0 0 36px}
+  .chip{min-height:48px;padding:0 18px;font-size:15px}
+  .bkui{gap:30px}
+  .hours div{padding:15px 0;font-size:17px}
+  .revs blockquote{font-size:27px}
+  .map{min-height:260px}
+}
+/* booking: who is asking */
+.who{display:grid;gap:16px}
+.who[hidden]{display:none}
+.fld{display:grid;gap:8px;font:500 14px var(--body);color:var(--muted)}
+.fld input{min-height:54px;padding:0 18px;border-radius:14px;border:1px solid var(--t3);background:var(--t1);color:var(--fg);font:500 17px var(--body);width:100%;box-sizing:border-box}
+.fld input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.chk{display:flex;gap:12px;align-items:flex-start;font:400 14px/1.5 var(--body);color:var(--muted)}
+.chk input{width:22px;height:22px;margin-top:2px;accent-color:var(--gold);flex:none}
+.err{color:#E5584F;font-size:15px}.err:empty{display:none}
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .js .rv{opacity:1;transform:none;transition:none}
@@ -355,6 +380,12 @@ footer .big{font-size:clamp(46px,12.5vw,170px)}
     <fieldset><legend>Day</legend><div class="chips" id="cDay"></div></fieldset>
     <fieldset><legend>Time</legend><div class="slots" id="cSlot"></div></fieldset>
     <p class="sum" id="sum" aria-live="polite">Pick a time to see your booking.</p>
+    <div class="who" id="who" hidden>
+      <label class="fld">Your name<input id="fName" autocomplete="name" maxlength="60" placeholder="First and last name"></label>
+      <label class="fld">Mobile number<input id="fPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(289) 555-0123"></label>
+      <label class="chk"><input type="checkbox" id="fOk"><span>Text me about this appointment (confirmation and reminder). Reply STOP any time.</span></label>
+      <p class="err" id="fErr" role="alert"></p>
+    </div>
     <div><button class="btn" id="req" disabled>Request this time</button></div>
   </div>
 </div></section>
@@ -371,6 +402,7 @@ footer .big{font-size:clamp(46px,12.5vw,170px)}
   <div class="big" translate="no" aria-hidden="true">Golden Chair</div>
 </footer>
 
+<script src="../../config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* ---------- content ---------- */
@@ -418,13 +450,27 @@ $('teamGrid').innerHTML=TEAM.map((t,i)=>`<li class="rv"><h3>${t[0]}</h3><div><p 
     $('cSlot').innerHTML=h;
     const s=SV[st.s],who=st.b?TEAM[st.b-1][0]:'the first free barber';
     $('sum').innerHTML=st.t==null?'Pick a time to see your booking.':`<b>${s[0]}</b> with ${who}, ${d.toLocaleDateString('en-CA',{weekday:'long',month:'long',day:'numeric'})} at ${t12(st.t)}. ${s[3]}&nbsp;min, $${s[2]}.`;
-    $('req').disabled=st.t==null;$('req').textContent='Request this time';
+    $('req').disabled=st.t==null;$('req').textContent='Request this time';$('who').hidden=st.t==null;
   }
   document.addEventListener('click',e=>{
     const a=e.target.closest('a[data-b]');if(a){st.b=+a.dataset.b;st.t=null;draw();return}
     const c=e.target.closest('.chip[data-k]');if(!c||c.disabled)return;
     st[c.dataset.k]=+c.dataset.v;if(c.dataset.k!=='t')st.t=null;draw()});
-  $('req').addEventListener('click',()=>{$('sum').textContent='This is a sample. On the live site your request goes to the shop and you get a confirmation text.';$('req').textContent='Sample only';$('req').disabled=true});
+  $('req').addEventListener('click',async()=>{
+    const name=$('fName').value.trim(),phone=$('fPhone').value.trim(),digits=phone.replace(/\D/g,''),err=$('fErr');err.textContent='';
+    if(!name){err.textContent='Please add your name.';$('fName').focus();return}
+    if(digits.length<10||digits.length>15){err.textContent='Please add a mobile number the shop can reach you on.';$('fPhone').focus();return}
+    const cfg=window.LEO||{},s=SV[st.s],d=days[st.d].d,mins=Math.round(st.t*60);
+    if(!cfg.shopId){$('sum').textContent='This is a sample, so nothing was sent. On the live site your name and number go straight to the shop\u2019s booking list.';$('req').textContent='Sample only';$('req').disabled=true;return}
+    const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    $('req').disabled=true;$('req').textContent='Sending\u2026';
+    try{
+      const r=await fetch(cfg.url+'/rest/v1/bookings',{method:'POST',headers:{apikey:cfg.key,Authorization:'Bearer '+cfg.key,'Content-Type':'application/json',Prefer:'return=minimal'},
+        body:JSON.stringify({shop_id:cfg.shopId,name,phone,service:s[0],price:s[2],barber:st.b?TEAM[st.b-1][0]:'',date:iso,time:mins,end_time:mins+s[3],status:'new',source:'website',consent:$('fOk').checked})});
+      if(!r.ok)throw new Error(r.status);
+      $('sum').innerHTML='<b>Request sent.</b> The shop will confirm your time'+($('fOk').checked?' by text.':' by phone.');$('who').hidden=true;$('req').hidden=true;
+    }catch(e){err.textContent='That did not go through. Please try again, or call the shop.';$('req').disabled=false;$('req').textContent='Request this time'}
+  });
   draw();
 })();
 
@@ -434,10 +480,11 @@ $('teamGrid').innerHTML=TEAM.map((t,i)=>`<li class="rv"><h3>${t[0]}</h3><div><p 
   let renderer;
   try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true})}catch(e){$('nogl').classList.add('on');box.classList.add('ready');return}
   const mobile=matchMedia('(max-width:820px)').matches;
-  renderer.setPixelRatio(Math.min(2,devicePixelRatio));renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
-  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.setPixelRatio(Math.min(mobile?1.5:2,devicePixelRatio));renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=mobile?THREE.PCFShadowMap:THREE.PCFSoftShadowMap;
   const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(28,1,.1,100);
   const maxAni=renderer.capabilities.getMaxAnisotropy();
+  let lastKey='',vis=true;new IntersectionObserver(es=>{vis=es[0].isIntersecting;if(vis)lastKey=''},{rootMargin:'120px'}).observe(box);
 
   /* studio environment: dark room, big soft boxes, warm and cool strips */
   (function(){const env=new THREE.Scene(),c=document.createElement('canvas');c.width=8;c.height=256;const g=c.getContext('2d'),gr=g.createLinearGradient(0,0,0,256);
@@ -485,42 +532,74 @@ $('teamGrid').innerHTML=TEAM.map((t,i)=>`<li class="rv"><h3>${t[0]}</h3><div><p 
     const btn=[];for(let i=-6;i<=6;i++)for(let j=-6;j<=6;j++){if((i+j)%2)continue;const x=i*step,y=j*step;if(Math.hypot(x,y)>.8)continue;const z0=Math.sqrt(1-x*x-y*y);btn.push([x*sx,y*sy,z0*fac(x,y,z0)*sz])}
     return{g,btn}}
 
-  /* base: one turned profile, like the real cast base */
-  add(chair,lathe([[0,0],[1.55,0],[1.68,.02],[1.72,.07],[1.7,.13],[1.6,.18],[1.4,.2],[1.05,.3],[.8,.42],[.66,.62],[.6,.9],[.62,1.05],[0,1.05]]),gloss);
-  add(chair,new THREE.TorusGeometry(1.64,.045,24,140),brass,0,.1,0,m=>m.rotation.x=Math.PI/2);
-  add(chair,new THREE.TorusGeometry(.7,.04,20,100),brass,0,.55,0,m=>m.rotation.x=Math.PI/2);
-  add(chair,lathe([[0,1.04],[.52,1.04],[.56,1.08],[.56,1.2],[.5,1.24],[0,1.24]]),brass);
-  for(let i=0;i<5;i++)add(chair,new THREE.TorusGeometry(.37,.016,10,60),brassSoft,0,.7+i*.07,0,m=>m.rotation.x=Math.PI/2);
-  /* seat */
-  add(chair,lathe([[0,1.24],[1.12,1.24],[1.2,1.3],[1.2,1.46],[1.12,1.52],[0,1.52]]),brass);
-  add(chair,new THREE.TorusGeometry(1.14,.04,18,120),brassSoft,0,1.5,0,m=>m.rotation.x=Math.PI/2);
-  add(chair,new THREE.SphereGeometry(1,96,48),leather,0,1.64,.02,m=>m.scale.set(1.12,.3,1.1));
-  /* tufted round back */
-  const back=new THREE.Group();back.position.set(0,2.98,-1.0);back.rotation.x=-.2;chair.add(back);
-  const tf=tufted(1.02,1.07,.34,.34,.62,.22);
+  /* ornate cast pattern: bump map for the gold bands and foot plate */
+  const orn=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.fillStyle='#707070';g.fillRect(0,0,256,256);
+    g.lineCap='round';
+    for(let gx=0;gx<2;gx++)for(let gy=0;gy<2;gy++){const ox=gx*128,oy=gy*128;
+      g.strokeStyle='#f4f4f4';g.lineWidth=7;g.beginPath();g.arc(ox+64,oy+64,38,0,6.283);g.stroke();
+      g.strokeStyle='#101010';g.lineWidth=5;g.beginPath();g.arc(ox+64,oy+64,22,0,6.283);g.stroke();
+      g.fillStyle='#f4f4f4';g.beginPath();g.arc(ox+64,oy+64,9,0,6.283);g.fill();
+      g.strokeStyle='#e8e8e8';g.lineWidth=6;g.beginPath();g.moveTo(ox+0,oy+64);g.bezierCurveTo(ox+14,oy+20,ox+30,oy+20,ox+26,oy+64);g.moveTo(ox+128,oy+64);g.bezierCurveTo(ox+114,oy+108,ox+98,oy+108,ox+102,oy+64);g.stroke();
+      g.fillStyle='#101010';[[0,0],[128,0],[0,128],[128,128]].forEach(p=>{g.beginPath();g.arc(ox+p[0]%128,oy+p[1]%128,7,0,6.283);g.fill()})}
+    const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=maxAni;return t})();
+  const ornTex=(rx,ry)=>{const t=orn.clone();t.needsUpdate=true;t.repeat.set(rx,ry);return t};
+  const goldBand=new THREE.MeshStandardMaterial({color:0xE8B440,metalness:1,roughness:.15,bumpMap:ornTex(9,1),bumpScale:.22,envMapIntensity:1.7});
+  const goldPlate=new THREE.MeshStandardMaterial({color:0xE8B440,metalness:1,roughness:.15,bumpMap:ornTex(1.1,1.1),bumpScale:.2,envMapIntensity:1.7});
+  const gold=new THREE.MeshStandardMaterial({color:0xDDA838,metalness:1,roughness:.12,envMapIntensity:2.0});
+  const chrome=new THREE.MeshStandardMaterial({color:0xdddddd,metalness:1,roughness:.08,envMapIntensity:1.4});
+  gloss.envMapIntensity=.55;leather.envMapIntensity=.45;leather.color.set(0x030302);
+  const pad=new THREE.MeshPhysicalMaterial({color:0x040403,metalness:0,roughness:.55,clearcoat:.25,clearcoatRoughness:.5,bumpMap:grain,bumpScale:.05,envMapIntensity:.18});
+
+  /* flat cast plate: a tube squashed in x, sitting in a side plane */
+  const plate=(pts,r,xoff,sx=.55,mat=gold)=>{const m=add(chair,tube(pts.map(p=>[0,p[0],p[1]]),r),mat,xoff,0,0);m.scale.x=sx;return m};
+  const gball=(r,x,y,z)=>ball(chair,r,x,y,z,gold);
+
+  /* base: black cast column on a wide gold disc with a black rubber rim */
+  add(chair,new THREE.TorusGeometry(1.7,.1,24,160),gloss,0,.1,0,m=>m.rotation.x=Math.PI/2);
+  add(chair,lathe([[0,.02],[1.62,.02],[1.66,.08],[1.62,.16],[1.4,.2],[1.05,.26],[.8,.36],[0,.36]]),gold);
+  add(chair,new THREE.TorusGeometry(1.5,.05,16,140),gold,0,.18,0,m=>m.rotation.x=Math.PI/2);
+  add(chair,lathe([[0,.34],[.74,.34],[.66,.46],[.58,.7],[.54,1.0],[.56,1.2],[0,1.2]]),gloss);
+  add(chair,new THREE.TorusGeometry(.68,.05,16,100),gold,0,.46,0,m=>m.rotation.x=Math.PI/2);
+  add(chair,new THREE.TorusGeometry(.58,.04,16,100),gold,0,1.12,0,m=>m.rotation.x=Math.PI/2);
+
+  /* seat: wide gold cast band, tufted black cushion */
+  add(chair,lathe([[0,1.18],[1.1,1.18],[1.2,1.22],[1.25,1.3],[1.25,1.52],[1.2,1.58],[1.12,1.6],[0,1.6]]),goldBand);
+  add(chair,new THREE.TorusGeometry(1.2,.045,18,140),gold,0,1.6,0,m=>m.rotation.x=Math.PI/2);
+  add(chair,new THREE.TorusGeometry(1.2,.04,18,140),gold,0,1.2,0,m=>m.rotation.x=Math.PI/2);
+  const seatG=new THREE.Group();seatG.position.set(0,1.58,.02);seatG.rotation.x=-Math.PI/2;chair.add(seatG);
+  const ts=tufted(1.13,1.12,.34,.44,.32,.16);
+  add(seatG,ts.g,leather);ts.btn.forEach(b=>ball(seatG,.045,b[0],b[1],b[2]+.008));
+
+  /* tufted round back in a thick gold ring */
+  const back=new THREE.Group();back.position.set(0,3.0,-1.0);back.rotation.x=-.2;chair.add(back);
+  const tf=tufted(1.02,1.07,.36,.34,.62,.22);
   add(back,tf.g,leather);
-  add(back,new THREE.TorusGeometry(1.03,.085,24,160),brass,0,0,-.01);
-  add(back,new THREE.TorusGeometry(1.0,.045,16,160),brassSoft,0,0,-.2);
-  add(back,cyl(.05,.05,.26,24),brassSoft,0,0,-.12,m=>m.rotation.x=Math.PI/2);
-  tf.btn.forEach(b=>ball(back,.052,b[0],b[1],b[2]+.01));
+  add(back,new THREE.TorusGeometry(1.05,.13,28,170),gold,0,0,-.03);
+  add(back,new THREE.TorusGeometry(.96,.035,16,160),gold,0,0,.05);
+  add(back,cyl(.07,.07,.3,24),gold,0,-1.08,-.1);
+  tf.btn.forEach(b=>ball(back,.055,b[0],b[1],b[2]+.012));
   /* headrest */
-  add(back,cyl(.035,.035,.55,20),brass,0,1.28,-.04);
-  add(back,new THREE.SphereGeometry(1,64,32),leather,0,1.6,.02,m=>m.scale.set(.52,.2,.2));
-  add(back,rbox(.9,.04,.1,.04,.02),brass,0,1.6,-.14,m=>m.rotation.x=Math.PI/2);
-  /* back struts */
-  [-1,1].forEach(s=>{add(chair,tube([[s*.98,1.5,-.5],[s*1.1,2.0,-.78],[s*1.02,2.62,-1.02]],.05),brass);ball(chair,.065,s*1.02,2.62,-1.02)});
-  /* arms */
-  [-1,1].forEach(s=>{
-    add(chair,tube([[s*1.12,1.5,.0],[s*1.36,1.92,-.08],[s*1.32,2.26,.15],[s*1.22,2.32,.66]],.058),brass);
-    add(chair,tube([[s*1.08,1.5,.5],[s*1.32,1.92,.62],[s*1.28,2.3,.6]],.048),brass);
-    add(chair,capsule(.115,1.1),leather,s*1.24,2.4,.1,m=>m.rotation.x=Math.PI/2);
-    ball(chair,.085,s*1.24,2.42,-.52);ball(chair,.085,s*1.24,2.42,.72);
-    ball(chair,.07,s*1.12,1.5,0)});
-  /* leg rest */
-  [-1,1].forEach(s=>add(chair,tube([[s*.78,1.2,.8],[s*.82,.8,1.5],[s*.8,.56,2.2]],.05),brass));
-  add(chair,rbox(1.5,.1,.34,.05,.025),brass,0,.62,1.0,m=>m.rotation.x=.3);
-  add(chair,rbox(1.5,.1,1.04,.12,.04),brass,0,.54,2.36,m=>m.rotation.x=-.18);
-  add(chair,rbox(1.38,.12,.92,.1,.04),leather,0,.64,2.37,m=>m.rotation.x=-.18);
+  add(back,cyl(.04,.04,.5,20),gold,0,1.3,-.05);
+  add(back,rbox(.96,.22,.4,.16,.09),pad,0,1.62,.0,m=>m.rotation.x=Math.PI/2);
+  add(back,rbox(.5,.06,.1,.04,.02),gold,0,1.62,-.2,m=>m.rotation.x=Math.PI/2);
+
+  /* side frames: broad cast plates */
+  [-1,1].forEach(s=>{const X=s*1.3;
+    plate([[1.6,-.62],[2.05,-.9],[2.55,-1.03]],.13,X,.7);
+    plate([[1.62,-.7],[2.02,-.62],[2.3,-.22],[2.35,.5],[2.28,.84],[1.95,.93],[1.62,.9]],.11,X,.7);
+    plate([[1.62,.9],[1.4,.98],[1.22,1.0]],.07,X,.6);
+    gball(.13,X,2.35,-.2);gball(.12,X,2.3,.84);gball(.1,X,1.62,.9);gball(.11,X,1.62,-.7);
+    add(chair,capsule(.14,.95),leather,X,2.47,.28,m=>{m.rotation.x=Math.PI/2;m.scale.set(1.15,1,.7)});
+    gball(.07,X,2.47,-.28);gball(.07,X,2.47,.84);
+  });
+
+  /* calf pad and leg rest */
+  add(chair,rbox(1.1,.16,1.2,.2,.06),gold,0,1.0,1.42,m=>m.rotation.x=1.05);
+  add(chair,rbox(.84,.14,.96,.2,.06),pad,0,1.05,1.5,m=>m.rotation.x=1.05);
+  [-1,1].forEach(s=>{plate([[1.35,1.12],[1.0,1.4],[.62,1.9],[.55,2.3]],.07,s*.62,.7);gball(.09,s*.62,.56,2.32)});
+  add(chair,rbox(1.7,.14,1.15,.16,.05),goldPlate,0,.5,2.5,m=>m.rotation.x=-.1);
+  add(chair,rbox(1.7,.14,.5,.1,.05),goldPlate,0,.78,3.08,m=>m.rotation.x=-.85);
+  add(chair,rbox(1.3,.1,.6,.14,.04),pad,0,.62,2.2,m=>m.rotation.x=-.1);
   chair.position.y=-1.55;
   const rig=new THREE.Group();rig.add(chair);scene.add(rig);
 
@@ -535,7 +614,7 @@ $('teamGrid').innerHTML=TEAM.map((t,i)=>`<li class="rv"><h3>${t[0]}</h3><div><p 
   const fill=new THREE.DirectionalLight(0xbcd0ff,.5);fill.position.set(8,3,-3);scene.add(fill);
 
   const shift=()=>innerWidth>820?.2:0;
-  function size(){const w=box.clientWidth,h=box.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;
+  function size(){lastKey='';const w=box.clientWidth,h=box.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;
     const mob=innerWidth<=820,d=mob?12.6:14.6;camera.position.set(0,mob?3.0:3.0,d);camera.lookAt(0,mob?.4:.55,0);
     camera.setViewOffset(w,h,-w*shift(),0,w,h);camera.updateProjectionMatrix()}
   addEventListener('resize',size);size();new ResizeObserver(size).observe(box);
@@ -549,17 +628,19 @@ $('teamGrid').innerHTML=TEAM.map((t,i)=>`<li class="rv"><h3>${t[0]}</h3><div><p 
   const setHdr=()=>document.documentElement.style.setProperty('--hdr',hdrH()+'px');setHdr();new ResizeObserver(setHdr).observe(hdrEl);
   function progress(){const r=track.getBoundingClientRect(),max=r.height-innerHeight+hdrH();return Math.min(1,Math.max(0,-r.top/Math.max(1,max)))}
   function frame(t){
+    if(!vis||document.hidden){requestAnimationFrame(frame);return}
     const p=q.has('p')?+q.get('p'):progress(),k=reduce||q.has('p')?1:Math.min(1,(t-t0)/2200),intro=(1-ease(k))*1.5;
     const tgt=reduce?.6:(.6+p*Math.PI*2*.92);
     cur+=(tgt-cur)*(q.has('p')?1:.1);mouse+=(mt-mouse)*.05;
     rig.rotation.y=cur+mouse-intro;rig.rotation.x=.05;
-    rig.position.y=reduce?0:Math.sin(t/1100)*.035;
+    rig.position.y=(reduce||mobile)?0:Math.sin(t/1100)*.035;
     const i=Math.min(2,Math.floor(p*3));
     chaps.forEach((c,j)=>c.classList.toggle('on',j===i));
     bars.forEach((b,j)=>b.style.setProperty('--f',Math.min(1,Math.max(0,p*3-j))));
     word.style.transform='translate3d('+(-p*5)+'%,0,0)';
     cue.style.opacity=p>.02?0:1;
-    renderer.render(scene,camera);
+    const key=rig.rotation.y.toFixed(4)+'|'+rig.position.y.toFixed(3);
+    if(key!==lastKey){lastKey=key;renderer.render(scene,camera)}
     if(first){first=false;box.classList.add('ready')}
     requestAnimationFrame(frame)}
   requestAnimationFrame(frame);
