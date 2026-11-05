@@ -26,7 +26,7 @@ const sb = supabase.createClient(LEO.url, LEO.key, { auth: { storage: authStore,
 const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const today = () => iso(new Date());
 const plusMonth = s => { const d = s ? new Date(s + 'T00:00:00') : new Date(); d.setMonth(d.getMonth() + 1); return iso(d); };
-const S = { user: null, shops: [], logins: {}, audit: [], err: '', msg: '', reveal: null, loginErr: '', busy: false, filter: '', em: '', eng: null, page: 'dashboard', menu: false, openId: null };
+const S = { user: null, shops: [], tickets: [], logins: {}, audit: [], err: '', msg: '', reveal: null, loginErr: '', busy: false, filter: '', em: '', eng: null, page: 'dashboard', menu: false, openId: null };
 S.remember = !!lsGet('leo_email'); S.keep = lsGet('leo_keep') !== '0'; if (S.remember) S.em = lsGet('leo_email') || '';
 
 async function load() {
@@ -36,6 +36,7 @@ async function load() {
     sb.from('admin_audit').select('*').order('at', { ascending: false }).limit(25)
   ]);
   S.shops = sh.data || []; S.audit = au.data || [];
+  try { const tk = await sb.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(100); S.tickets = tk.error ? [] : (tk.data || []); } catch (e) { S.tickets = []; }
   try { const es = await sb.rpc('engine_status'); S.eng = es.error ? null : es.data; } catch (e) { S.eng = null; }
   S.logins = {}; (pr.data || []).forEach(p => { S.logins[p.shop_id] = p.last_login; });
   if (sh.error) S.err = sh.error.message;
@@ -69,9 +70,10 @@ const ICA = {
   clients: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 010 6.8M18 14.8c2 .6 3.2 2.3 3.5 5.2"/></svg>',
   add: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
   payments: '<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h3"/></svg>',
+  support: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 114 2c-.9.6-1.6 1.1-1.6 2.1M12 17h.01"/></svg>',
   activity: '<svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>'
 };
-const PAGES = [['dashboard', 'Dashboard'], ['clients', 'Clients'], ['add', 'Add a client'], ['payments', 'Plans and payments'], ['activity', 'Activity']];
+const PAGES = [['dashboard', 'Dashboard'], ['clients', 'Clients'], ['add', 'Add a client'], ['payments', 'Plans and payments'], ['support', 'Support'], ['activity', 'Activity']];
 const state = (sh, k) => !sh['pkg_' + k] ? '<span class="fine">not included</span>' : sh['closed_' + k] ? '<span class="tag bad">closed</span>' : '<span class="tag">open</span>';
 
 function loginView() {
@@ -108,7 +110,8 @@ function clientCard(sh) {
 function pgDashboard() {
   const overdue = S.shops.filter(s => s.due_date && daysTo(s.due_date) < 0), soon = S.shops.filter(s => s.due_date && daysTo(s.due_date) >= 0 && daysTo(s.due_date) <= 7);
   const closed = S.shops.filter(s => !rolling(s)), never = S.shops.filter(s => !S.logins[s.id]);
-  const attn = [...overdue, ...soon].map(dueRow).join('') + closed.map(s => `<div class="ap"><div><b>${esc(s.name)}</b> <small>everything is closed</small></div><button class="btn ghost mini" data-a="more" data-id="${s.id}" data-go="1">Open settings</button></div>`).join('') + never.filter(s => rolling(s)).map(s => `<div class="ap"><div><b>${esc(s.name)}</b> <small>has not signed in yet · send them their login</small></div></div>`).join('');
+  const tkNote = openTk() ? `<div class="ap"><div><b>${openTk()} support question${openTk() === 1 ? '' : 's'} waiting</b></div><button class="btn ghost mini" data-a="page" data-p="support">Answer</button></div>` : '';
+  const attn = tkNote + [...overdue, ...soon].map(dueRow).join('') + closed.map(s => `<div class="ap"><div><b>${esc(s.name)}</b> <small>everything is closed</small></div><button class="btn ghost mini" data-a="more" data-id="${s.id}" data-go="1">Open settings</button></div>`).join('') + never.filter(s => rolling(s)).map(s => `<div class="ap"><div><b>${esc(s.name)}</b> <small>has not signed in yet · send them their login</small></div></div>`).join('');
   return `<div><h3>Dashboard</h3><p class="fine" style="margin:0">Signed in as ${esc(S.user.email)}</p></div>${msgs()}
   <div class="stats"><div class="stat dark"><span>Clients rolling</span><b>${S.shops.filter(rolling).length}</b><span>${S.shops.length} in total</span></div><div class="stat"><span>Payments overdue</span><b>${overdue.length}</b><span>${soon.length} more due this week</span></div>${timerTile()}</div>
   <div class="grid2"><div class="card"><h4>Needs your attention</h4>${attn || '<p class="fine">All clear. Nothing needs you right now.</p>'}</div>
@@ -137,12 +140,27 @@ function pgPayments() {
   <div class="card"><h4>Overdue or due in the next 14 days</h4>${due.map(dueRow).join('') || '<p class="fine">Nothing is due in the next 14 days.</p>'}</div>
   <div class="card"><h4>All clients</h4><div class="scroll"><table class="sh"><thead><tr><th>Client</th><th>Plan</th><th>Last paid</th><th>Next due</th><th></th></tr></thead><tbody>${all.map(s => `<tr><td><b>${esc(s.name)}</b><br><small>${esc(s.owner_email)}</small></td><td>${planOf(s)}</td><td>${nice(s.paid_date)}</td><td><input type="date" data-due="${s.id}" value="${esc(s.due_date || '')}" style="min-height:34px;font-size:14px;max-width:150px"> ${dueTag(s)}</td><td><button class="btn ghost mini" data-a="paid" data-id="${s.id}">Mark paid</button></td></tr>`).join('') || '<tr><td colspan="5">No clients yet.</td></tr>'}</tbody></table></div></div>`;
 }
+const openTk = () => S.tickets.filter(t => t.status === 'open').length;
+function pgSupport() {
+  const shopName = id => { const x = S.shops.find(s => s.id === id); return x ? x.name : 'Unknown shop'; };
+  const when = t => new Date(t).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const open = S.tickets.filter(t => t.status === 'open').slice().reverse();
+  const rest = S.tickets.filter(t => t.status !== 'open');
+  const card = t => `<div class="cl"><div class="clh"><div style="min-width:0"><b>${esc(t.subject)}</b><small>${esc(shopName(t.shop_id))} · ${when(t.created_at)}</small></div><a class="btn ghost mini" style="display:inline-flex;align-items:center;text-decoration:none" href="../owner.html?shop=${esc(t.shop_id)}">Open their space</a></div>
+    <p style="white-space:pre-wrap;margin:8px 0">${esc(t.body)}</p>
+    <label class="l">Your answer<textarea data-rp="${esc(t.id)}" maxlength="1500" rows="3" placeholder="Write the answer the owner will see"></textarea></label>
+    <div class="row" style="gap:8px;margin-top:8px"><button class="btn mini" data-a="reply" data-id="${esc(t.id)}">Send answer</button><button class="btn ghost mini" data-a="closeTk" data-id="${esc(t.id)}">Close without answer</button></div></div>`;
+  const done = t => `<div class="ap"><div><b>${esc(t.subject)}</b><small>${esc(shopName(t.shop_id))} · ${t.status === 'answered' ? 'answered ' + when(t.replied_at || t.created_at) : 'closed'}</small>${t.admin_reply ? `<small style="white-space:pre-wrap">Answer: ${esc(t.admin_reply)}</small>` : ''}</div></div>`;
+  return `<div><h3>Support</h3><p class="fine" style="margin:0">Questions and problems sent by shop owners from their Help tab. ${openTk()} waiting.</p></div>${msgs()}
+  <div class="cls2">${open.map(card).join('') || '<div class="card"><p class="fine">No open questions. Nice.</p></div>'}</div>
+  ${rest.length ? `<div class="card"><h4>Answered and closed</h4>${rest.slice(0, 20).map(done).join('')}</div>` : ''}`;
+}
 function pgActivity() { return `<div><h3>Activity</h3><p class="fine" style="margin:0">Everything you did inside a client's space or changed about a client.</p></div><div class="card">${actList(25)}</div>`; }
 function view() {
   const reveal = S.reveal ? `<div class="card" style="border-color:var(--accent)"><h4>${esc(S.reveal.title)}</h4><p>Email: <b>${esc(S.reveal.email)}</b></p><p>Password (shown once, copy it now):</p><div class="row"><span class="pw">${esc(S.reveal.pw)}</span></div><p class="fine">Send it to the owner when you are ready. Nothing was emailed. They can change it themselves after signing in.</p><div class="row"><button class="btn ghost small" data-a="hide">Done</button></div></div>` : '';
   const od = S.shops.filter(s => s.due_date && daysTo(s.due_date) < 0).length, open = !!S.menu;
-  const nav = PAGES.map(([k, n]) => `<button type="button" class="${S.page === k ? 'on' : ''}" data-a="page" data-p="${k}">${ICA[k]}<span>${n}</span>${k === 'payments' && od ? `<em>${od}</em>` : ''}</button>`).join('');
-  const body = { dashboard: pgDashboard, clients: pgClients, add: pgAdd, payments: pgPayments, activity: pgActivity }[S.page]();
+  const nav = PAGES.map(([k, n]) => `<button type="button" class="${S.page === k ? 'on' : ''}" data-a="page" data-p="${k}">${ICA[k]}<span>${n}</span>${k === 'payments' && od ? `<em>${od}</em>` : ''}${k === 'support' && openTk() ? `<em>${openTk()}</em>` : ''}</button>`).join('');
+  const body = { dashboard: pgDashboard, clients: pgClients, add: pgAdd, payments: pgPayments, support: pgSupport, activity: pgActivity }[S.page]();
   const pn = (PAGES.find(p => p[0] === S.page) || [])[1] || '';
   return `<header class="bar admbar"><button type="button" class="hbtn" data-a="menu" aria-label="Open menu" aria-expanded="${open}" aria-controls="drawer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>${od ? '<i class="dot"></i>' : ''}</button><div class="shopn"><img src="../mark.svg" alt="">Platform admin</div><span class="pg">${pn}</span></header>
   <div class="admshell"><nav class="side drawer admdrawer ${open ? 'open' : ''}" id="drawer" aria-label="Main"><div class="dtop"><div class="brand2" style="padding-bottom:14px">Platform admin</div><button type="button" class="x" data-a="closemenu" aria-label="Close menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>${nav}<div class="note">Signed in as ${esc(S.user.email)}</div><div class="links"><a href="../legal.html">Terms and privacy</a></div><button type="button" class="out" data-a="logout">Log out</button></nav>${open ? '<div class="scrim" data-a="closemenu"></div>' : ''}
@@ -166,6 +184,20 @@ const ACT = {
   own: async el => { const k = el.dataset.k, on = el.dataset.v === '1', sh = S.shops.find(x => x.id === el.dataset.id); const other = k === 'site' ? sh.pkg_ai : sh.pkg_site; if (!on && !other) { S.err = 'A client needs at least one thing. Close it instead, or add the other first.'; return; } await patch(sh.id, { ['pkg_' + k]: on, ['closed_' + k]: false }, (on ? 'added ' : 'removed ') + (k === 'site' ? 'website' : 'AI system')); },
   close: async el => { const k = el.dataset.k, sh = S.shops.find(x => x.id === el.dataset.id), now = !sh['closed_' + k]; await patch(sh.id, { ['closed_' + k]: now }, (now ? 'closed ' : 'reopened ') + (k === 'site' ? 'website' : 'AI system')); },
   paid: async el => { const sh = S.shops.find(x => x.id === el.dataset.id); await patch(sh.id, { paid_date: today(), due_date: plusMonth(sh.due_date && sh.due_date > today() ? sh.due_date : today()) }, 'marked paid'); },
+  reply: async el => {
+    const id = el.dataset.id, box = document.querySelector('[data-rp="' + id + '"]'), txt = (box && box.value || '').trim();
+    if (!txt) { S.err = 'Write an answer first.'; return; }
+    const t = S.tickets.find(x => x.id === id);
+    const { error } = await sb.from('support_tickets').update({ admin_reply: txt.slice(0, 1500), status: 'answered', replied_at: new Date().toISOString() }).eq('id', id);
+    if (error) { S.err = 'Could not send: ' + error.message; return; }
+    await audit(t ? t.shop_id : null, 'answered a support question'); S.err = ''; S.msg = 'Answer sent.'; await load();
+  },
+  closeTk: async el => {
+    const id = el.dataset.id, t = S.tickets.find(x => x.id === id);
+    const { error } = await sb.from('support_tickets').update({ status: 'closed' }).eq('id', id);
+    if (error) { S.err = error.message; return; }
+    await audit(t ? t.shop_id : null, 'closed a support question'); S.err = ''; S.msg = 'Closed.'; await load();
+  },
   reset: async el => {
     const sh = S.shops.find(x => x.id === el.dataset.id);
     const { data, error } = await sb.functions.invoke('admin-reset-password', { body: { shop_id: sh.id, password: (document.querySelector('[data-rpw="' + sh.id + '"]') || {}).value || '' } });
