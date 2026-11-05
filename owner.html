@@ -38,11 +38,12 @@ const ICO = {
   customers: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.4 3.3-5.5 6.5-5.5s5.9 2.1 6.5 5.5M16 4.8a3.5 3.5 0 010 6.4M18 14.8c1.9.7 3.2 2.4 3.5 5.2"/></svg>',
   team: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>',
   website: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>',
+  help: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 114 2c-.9.6-1.6 1.1-1.6 2.1M12 17h.01"/></svg>',
   account: '<svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>'
 };
-const TABNAMES = { today: 'Overview', appointments: 'Appointments', inbox: 'Requests', automations: 'Automations', customers: 'Customers', team: 'Team and staff', website: 'Website', account: 'My login' };
+const TABNAMES = { today: 'Overview', appointments: 'Appointments', inbox: 'Requests', automations: 'Automations', customers: 'Customers', team: 'Team and staff', website: 'Website', help: 'Help', account: 'My login' };
 
-const S = { user: null, shop: null, content: null, bookings: [], eng: null, asAdmin: false, recovery: false, tab: 'today', date: todayIso(), form: { name: '', phone: '', barber: '', date: todayIso(), time: '', end: '', consent: false }, msg: '', err: '', loginErr: '', info: '', busy: false, noAccess: '', em: '', menu: false };
+const S = { user: null, shop: null, content: null, bookings: [], tickets: [], tForm: { subject: '', body: '' }, eng: null, asAdmin: false, recovery: false, tab: 'today', date: todayIso(), form: { name: '', phone: '', barber: '', date: todayIso(), time: '', end: '', consent: false }, msg: '', err: '', loginErr: '', info: '', busy: false, noAccess: '', em: '', menu: false };
 S.remember = !!lsGet('leo_email'); S.keep = lsGet('leo_keep') !== '0'; if (S.remember) S.em = lsGet('leo_email') || '';
 const live = k => !!S.shop && S.shop['pkg_' + k] && !S.shop['closed_' + k];
 const has = k => !!S.shop && S.shop['pkg_' + k];
@@ -70,7 +71,15 @@ async function loadAll() {
   S.content = defContent(c.data && c.data.content);
   S.bookings = b.data || [];
   S.eng = E.normalize(e.data && e.data.data);
+  await loadTickets();
 }
+async function loadTickets() {
+  if (!S.shop) return;
+  const { data } = await sb.from('support_tickets').select('*').eq('shop_id', S.shop.id).order('created_at', { ascending: false }).limit(50);
+  S.tickets = data || [];
+}
+const seenKey = () => 'leo_help_seen_' + (S.shop ? S.shop.id : '');
+const unseenReplies = () => { const seen = +(lsGet(seenKey()) || 0); return S.tickets.filter(t => t.replied_at && new Date(t.replied_at).getTime() > seen).length; };
 async function reloadBookings() {
   if (!S.shop || !live('ai') && !S.asAdmin) return;
   const { data } = await sb.from('bookings').select('*').eq('shop_id', S.shop.id).order('date').order('time');
@@ -129,7 +138,7 @@ function tabs() {
   if (ai) t.push('today', 'appointments', 'inbox', 'automations', 'customers');
   if (ai || site) t.push('team');
   if (site) t.push('website');
-  if (!S.asAdmin) t.push('account');
+  if (!S.asAdmin) t.push('help', 'account');
   return t;
 }
 
@@ -137,9 +146,9 @@ function tabs() {
 const newCount = () => S.bookings.filter(b => b.status === 'new').length;
 const draftCount = () => S.eng.outbox.filter(m => m.status === 'draft').length;
 function shell(main) {
-  const nav = tabs().map(k => { const n = k === 'inbox' ? newCount() : k === 'automations' ? draftCount() : 0; return `<button type="button" class="${S.tab === k ? 'on' : ''}" data-tab="${k}">${ICO[k]}<span>${TABNAMES[k]}</span>${n ? `<em>${n}</em>` : ''}</button>`; }).join('');
+  const nav = tabs().map(k => { const n = k === 'inbox' ? newCount() : k === 'automations' ? draftCount() : k === 'help' ? unseenReplies() : 0; return `<button type="button" class="${S.tab === k ? 'on' : ''}" data-tab="${k}">${ICO[k]}<span>${TABNAMES[k]}</span>${n ? `<em>${n}</em>` : ''}</button>`; }).join('');
   const banner = S.asAdmin ? `<div class="banner"><span>ADMIN VIEW · ${esc(S.shop.name)} · your changes are real and logged</span><a class="btn small ghost" href="hq-k7m2/index.html" style="display:inline-flex;align-items:center;text-decoration:none">← Back to admin</a></div>` : '';
-  const open = !!S.menu, pend = newCount() + draftCount();
+  const open = !!S.menu, pend = newCount() + draftCount() + (S.asAdmin ? 0 : unseenReplies());
   const bar = `<header class="bar"><button type="button" class="hbtn" data-a="menu" aria-label="Open menu" aria-expanded="${open}" aria-controls="drawer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>${pend ? '<i class="dot"></i>' : ''}</button><div class="shopn"><img src="mark.svg" alt="">${esc(S.shop.name)}</div><span class="pg">${esc(TABNAMES[S.tab] || '')}</span></header>`;
   const out = S.asAdmin ? '<a class="btn small ghost out" href="hq-k7m2/index.html" style="display:flex;align-items:center;text-decoration:none;color:var(--navon);border:1px solid var(--navfg);border-radius:12px;min-height:46px;padding:0 12px;font-weight:700">\u2190 Back to admin</a>' : '<button type="button" class="out" data-a="logout">Log out</button>';
   const drawer = `<nav class="side drawer ${open ? 'open' : ''}" id="drawer" aria-label="Main" ${open ? '' : 'aria-hidden="true"'}><div class="dtop"><div class="brand2">${esc(S.shop.name)}</div><button type="button" class="x" data-a="closemenu" aria-label="Close menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>${nav}<div class="note">Every message includes your business name, address and a STOP option. Customers who say STOP are never messaged again.</div><div class="links"><a href="guide.html">How to use this panel</a> &middot; <a href="legal.html">Terms and privacy</a></div>${out}</nav>${open ? '<div class="scrim" data-a="closemenu"></div>' : ''}`;
@@ -308,6 +317,29 @@ function viewCustomers() {
     <label class="l">What happens<select id="te">${opt([['visit', 'Visits today'], ['appt24', 'Has an appointment tomorrow'], ['appt2h', 'Has an appointment today'], ['lapsed', 'Last visit was 6 weeks ago'], ['inquiry', 'Sends an inquiry today'], ['missed', 'Calls today and nobody answers']])}</select></label></div>
     <div class="row"><button class="btn small" type="button" data-a="addtest">Add customer</button></div></div></div>`;
 }
+const FAQ = [
+  ['How do I accept or decline a booking request?', 'Open <b>Requests</b>. Each request shows the customer, the service and the time. Press <b>Accept</b> (pick a barber if they chose "anyone") or <b>Decline</b>. Nothing is booked until you accept.'],
+  ['Someone called and I missed it. What now?', 'Open <b>Customers</b> and use <b>Log a missed call or an inquiry</b>. The system writes the text-back for you. Right now it is a practice run, so the message is only drafted and nothing is sent.'],
+  ['Why is nothing being texted to my customers?', 'This is a practice run. Messages are written and wait for your OK in <b>Automations</b>, but real texting is switched on by your provider when you are ready.'],
+  ['Why was a message blocked?', 'Open <b>Automations</b> and look at <b>Stopped by the rules</b>. A message is blocked when the customer never agreed to texts, agreed too long ago, or replied STOP. This keeps you inside the Canadian anti-spam rules.'],
+  ['A customer replied STOP. What do I do?', 'Open <b>Customers</b> and press <b>Replies STOP</b> next to their name. They will never be messaged again.'],
+  ['How do I change my prices, hours or services?', 'Open <b>Website</b>. Change your services, prices and opening hours there. The changes show on your website right away.'],
+  ['How do I add a barber or change the days they work?', 'Open <b>Team and staff</b>. Add the first name, then tap the days they work. Customers on your website are only offered barbers working that day.'],
+  ['How do I change my password or email?', 'Open <b>My login</b>. If you cannot sign in at all, use <b>Forgot password?</b> on the sign-in page, or contact your provider.']
+];
+function viewHelp() {
+  const f = S.tForm, st = t => t.status === 'open' ? '<span class="tag warn">Waiting for an answer</span>' : t.status === 'answered' ? '<span class="tag ok">Answered</span>' : '<span class="tag">Closed</span>';
+  const mine = S.tickets.map(t => `<div class="req"><div class="row" style="justify-content:space-between;gap:8px"><b>${esc(t.subject)}</b>${st(t)}</div><p class="fine" style="margin:4px 0">${esc(new Date(t.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }))}</p><p style="white-space:pre-wrap;margin:6px 0">${esc(t.body)}</p>${t.admin_reply ? `<div class="reply"><small>Answer from your provider</small><p style="white-space:pre-wrap;margin:4px 0 0">${esc(t.admin_reply)}</p></div>` : ''}</div>`).join('');
+  const openN = S.tickets.filter(t => t.status === 'open').length;
+  return `<div><h3>Help</h3><p>Quick answers first. If yours is not here, send us your question below.</p></div>
+  <div class="card"><h4>Common questions</h4>${FAQ.map(([q, a]) => `<details class="faq"><summary>${q}</summary><p>${a}</p></details>`).join('')}<p class="fine" style="margin-top:12px"><a href="guide.html">Full guide</a> &middot; <a href="legal.html">Terms and privacy</a></p></div>
+  ${S.asAdmin ? '<div class="card"><p class="fine">Admin view: owners send questions from here. You answer them on the Support page of the admin site.</p></div>' : `<form class="card" id="ticketForm"><h4>Send us a question or problem</h4>
+    <label class="l">Short title<input type="text" id="tSub" maxlength="100" value="${esc(f.subject)}" placeholder="Example: A text did not go out" required></label>
+    <label class="l">What happened?<textarea id="tBody" maxlength="1500" rows="5" placeholder="Tell us what you tried and what you saw. Please do not type passwords." required>${esc(f.body)}</textarea></label>
+    <div class="err" role="alert">${esc(S.err)}</div><div class="status" role="status">${esc(S.msg)}</div>
+    <div class="row"><button class="btn small" type="submit" ${openN >= 5 ? 'disabled' : ''}>Send</button>${openN >= 5 ? '<span class="fine">You have 5 questions waiting. We will answer those first.</span>' : ''}</div></form>`}
+  <div class="card"><h4>Your questions</h4>${mine || '<p class="fine">Nothing sent yet.</p>'}</div>`;
+}
 function viewAccount() {
   return `<div><h3>My login</h3><p>Your sign-in email is <b>${esc(S.user.email)}</b>. Change your password or your email here.</p></div>
   <form class="card" id="pwForm"><h4>Change password</h4><div class="form2"><label class="l">Current password<input type="password" id="cpw" autocomplete="current-password" maxlength="100" required></label><label class="l">New password (at least 10 characters)<input type="password" id="npw" autocomplete="new-password" maxlength="100" required></label></div>
@@ -336,7 +368,7 @@ function render() {
   if (S.noAccess === 'admin') { app.innerHTML = `<div class="login"><div class="card"><h3 style="font-size:28px">You are signed in as admin</h3><p>This page is for shop owners. To look inside a client's space, open it from the admin page.</p><a class="btn" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center" href="hq-k7m2/index.html">Go to the admin page</a><button class="btn ghost" data-a="logout">Log out</button></div></div>`; return; }
   if (S.noAccess) { app.innerHTML = `<div class="login"><div class="card"><p>${esc(S.noAccess)}</p><button class="btn ghost" data-a="logout">Log out</button></div></div>`; return; }
   if (!S.asAdmin && !live('ai') && !live('site')) { app.innerHTML = suspended(); return; }
-  const v = { today: viewToday, appointments: viewAppointments, inbox: viewInbox, automations: viewAutomations, customers: viewCustomers, team: viewTeam, website: viewWebsite, account: viewAccount };
+  const v = { today: viewToday, appointments: viewAppointments, inbox: viewInbox, automations: viewAutomations, customers: viewCustomers, team: viewTeam, website: viewWebsite, help: viewHelp, account: viewAccount };
   if (!tabs().includes(S.tab)) S.tab = firstTab();
   app.innerHTML = shell(v[S.tab]());
   if (keep) { const el = document.getElementById(keep); if (el) el.focus(); }
@@ -417,7 +449,7 @@ const ACT = {
 
 document.addEventListener('click', async ev => {
   const tb = ev.target.closest('[data-tab]');
-  if (tb) { S.tab = tb.dataset.tab; S.err = ''; S.msg = ''; S.menu = false; render(); window.scrollTo(0, 0); return; }
+  if (tb) { S.tab = tb.dataset.tab; S.err = ''; S.msg = ''; S.menu = false; if (S.tab === 'help' && !S.asAdmin) { loadTickets().then(() => { lsSet(seenKey(), String(Date.now())); render(); }); } render(); window.scrollTo(0, 0); return; }
   const el = ev.target.closest('[data-a]'); if (!el) return;
   const fn = ACT[el.dataset.a]; if (!fn) return;
   el.disabled = true;
@@ -448,6 +480,14 @@ document.addEventListener('submit', async ev => {
     const { error } = await sb.auth.updateUser({ password: pw });
     if (error) { S.loginErr = error.message; return render(); }
     S.recovery = false; await boot();
+  } else if (id === 'ticketForm') {
+    S.err = ''; S.msg = '';
+    const subject = $('#tSub').value.trim(), body = $('#tBody').value.trim();
+    S.tForm = { subject, body };
+    if (!subject || !body) { S.err = 'Please fill in both boxes.'; return render(); }
+    const { error } = await sb.from('support_tickets').insert({ shop_id: S.shop.id, subject: subject.slice(0, 100), body: body.slice(0, 1500) });
+    if (error) { S.err = /row-level security|policy/i.test(error.message) ? 'You already have 5 questions waiting. We will answer those first.' : 'Could not send: ' + error.message; return render(); }
+    S.tForm = { subject: '', body: '' }; S.msg = 'Sent. We will answer here as soon as we can.'; await loadTickets(); render();
   } else if (id === 'pwForm') {
     S.err = ''; S.msg = '';
     const cur = $('#cpw').value, npw = $('#npw').value;
@@ -467,7 +507,7 @@ document.addEventListener('submit', async ev => {
     render();
   }
 });
-setInterval(() => { if (S.shop && document.visibilityState === 'visible') reloadBookings().then(() => { if (!document.activeElement || !/INPUT|SELECT/.test(document.activeElement.tagName)) render(); }); }, 45000);
+setInterval(() => { if (S.shop && document.visibilityState === 'visible') Promise.all([reloadBookings(), loadTickets()]).then(() => { if (!document.activeElement || !/INPUT|SELECT/.test(document.activeElement.tagName)) render(); }); }, 45000);
 boot().catch(e => { app.innerHTML = '<div class="login"><div class="card"><p>Something went wrong loading the panel: ' + esc(e.message || e) + '</p></div></div>'; });
 </script>
 </body>

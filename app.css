@@ -215,3 +215,16 @@ nav.side.drawer .links{margin-bottom:12px}
   nav.side.drawer.admdrawer .note{display:block}
 }
 nav.side .brand2::before{width:34px;height:34px;border-radius:0;background:url(mark.svg) center/contain no-repeat}
+
+/* help tab */
+textarea{width:100%;box-sizing:border-box;min-height:120px;border-radius:12px;border:1px solid var(--field);padding:12px 14px;font:inherit;color:var(--fg);background:#fff;resize:vertical}
+textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+details.faq{border-top:1px solid var(--line,rgba(0,0,0,.1));padding:2px 0}
+details.faq:first-of-type{border-top:0}
+details.faq summary{cursor:pointer;min-height:46px;display:flex;align-items:center;font-weight:700;list-style:none}
+details.faq summary::-webkit-details-marker{display:none}
+details.faq summary::after{content:'+';margin-left:auto;padding-left:12px;font-size:20px;color:var(--accent)}
+details.faq[open] summary::after{content:'\2212'}
+details.faq p{margin:0 0 12px}
+.reply{border-left:3px solid var(--accent);background:var(--soft);padding:10px 12px;border-radius:0 10px 10px 0;margin-top:8px}
+.tag.ok{background:var(--soft);color:var(--accent)}
