@@ -275,6 +275,13 @@ body{background:radial-gradient(1200px 700px at 85% 8%,rgba(120,50,80,.28),trans
 .hcopy>*{animation:hup 1s cubic-bezier(.2,.8,.2,1) both}.hcopy>*:nth-child(2){animation-delay:.12s}.hcopy>*:nth-child(3){animation-delay:.24s}.hcopy>*:nth-child(4){animation-delay:.34s}
 @keyframes hup{from{opacity:0;transform:translateY(26px)}}
 @media(max-width:900px){.hero{min-height:calc(100svh - 80px)}}
+.sumbox{background:rgba(255,255,255,.07);color:var(--ink)}
+.fld input{background:rgba(255,255,255,.08);color:var(--ink)}
+.fld input::placeholder{color:rgba(246,233,225,.45)}
+.op[aria-pressed="true"]{background:rgba(236,200,149,.18);border-color:var(--champ2)}
+.op:disabled{opacity:.35}
+input[type=range]{accent-color:#d9b987}
+.vb h3,.vb p{color:var(--ink)}
 </style>
 
 <div id="prog" aria-hidden="true"></div><div id="cur" aria-hidden="true"></div>
