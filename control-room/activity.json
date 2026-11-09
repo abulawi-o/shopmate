@@ -1,13 +1,13 @@
 {
- "updated": "2026-11-08 21:35",
+ "updated": "2026-11-08 22:05",
  "note": "Real work log. Written by Claude after each piece of work. Nothing here is simulated.",
  "agents": [
   {
    "id": "nova",
    "status": "Working",
-   "progress": 25,
-   "when": "Nov 8, 9:35 pm",
-   "task": "NOW: auditing Fade Vault Barbershop (Milton). Found so far: 4.9 stars, 467 reviews, hexagon-lit shop. Its only web link is a Clover booking page (cloveronline.com), not a real website. Still to read: hours and photos. Then The Gem Cut and Master Chair."
+   "progress": 40,
+   "when": "Nov 8, 10:05 pm",
+   "task": "Audited Fade Vault (4.9 stars, 467 reviews, no working website: its only listed link did not load). Hours and phone confirmed. NOW: auditing The Gem Cut next, then Master Chair."
   },
   {
    "id": "sage",
@@ -25,24 +25,24 @@
   },
   {
    "id": "forge",
-   "status": "Queued",
-   "progress": 0,
-   "when": "Nov 8, 9:35 pm",
-   "task": "NEXT: build the Fade Vault concept site (same standard as Origin: booking calendar, clock picker, socials, Owner login) once Nova finishes the audit. One shop at a time, then Gem Cut, then Master Chair."
+   "status": "Done",
+   "progress": 100,
+   "when": "Nov 8, 10:05 pm",
+   "task": "Built Fade Vault (hexagon-ceiling drone-flight hero, booking calendar and clock, socials, Owner login). Live on GitHub. Fixed a bug where every site's Owner link pointed to a missing page. NEXT: The Gem Cut."
   },
   {
    "id": "pixel",
-   "status": "Queued",
-   "progress": 0,
-   "when": "Nov 8, 9:35 pm",
-   "task": "NEXT: record the walkthrough video and screenshots for each new site, and save each client folder to the Desktop 'clients' folder. Drone-style flythrough only if a good video exists for that shop."
+   "status": "Done",
+   "progress": 100,
+   "when": "Nov 8, 10:05 pm",
+   "task": "Made the Fade Vault walkthrough video (34 s) and 3 screenshots, saved to the Desktop clients folder. NEXT: same for The Gem Cut."
   },
   {
    "id": "argus",
-   "status": "Queued",
-   "progress": 0,
-   "when": "Nov 8, 9:35 pm",
-   "task": "NEXT: test every new site on desktop and phone before it goes in the folder. No site is delivered untested."
+   "status": "Done",
+   "progress": 100,
+   "when": "Nov 8, 10:05 pm",
+   "task": "Tested Fade Vault on desktop and phone (booking, clock, no sideways scroll). Found and fixed the broken Owner link. The owner login page itself is still untested."
   },
   {
    "id": "ledger",
