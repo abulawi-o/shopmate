@@ -346,7 +346,7 @@ input:focus,select:focus{outline:none;border-bottom-color:var(--brick)}
       else{var o=H[0];clk.hh=(Math.floor(o)+11)%12+1;clk.mm=Math.round((o%1)*60);clk.ap=o>=12?'pm':'am'}
       clk.mode='h';
       var f='<div class="ch"><input id="cH" inputmode="numeric" maxlength="2" aria-label="Hour" autocomplete="off"><span class="sep">:</span><input id="cM" inputmode="numeric" maxlength="2" aria-label="Minutes" autocomplete="off"><div class="ap"><button type="button" data-ap="am">AM</button><button type="button" data-ap="pm">PM</button></div></div>';
-      f+='<svg class="face" id="face" viewBox="0 0 240 240" role="img" aria-label="Clock face. Pick the hour, then the minutes."><circle cx="120" cy="120" r="116" fill="#14211f" stroke="rgba(239,230,214,.16)"/><g id="faceNums"></g><line class="hand" id="hand" x1="120" y1="120" x2="120" y2="40"/><circle class="knob" id="knob" r="17" cx="120" cy="40"/><circle class="knob" cx="120" cy="120" r="3.5"/></svg>';
+      f+='<svg class="face" id="face" viewBox="0 0 240 240" role="img" aria-label="Clock face. Pick the hour, then the minutes."><circle cx="120" cy="120" r="116" fill="#f5ede0" stroke="#13110f"/><g id="faceNums"></g><line class="hand" id="hand" x1="120" y1="120" x2="120" y2="40"/><circle class="knob" id="knob" r="17" cx="120" cy="40"/><circle class="knob" cx="120" cy="120" r="3.5"/></svg>';
       f+='<p class="cmsg" id="cMsg" aria-live="polite">Open '+t12(H[0])+' to '+t12(H[1])+'. Tap the hour, then the minutes, or type them.</p><div class="cfoot"><button type="button" class="btn" id="cSet">Set time</button></div>';
       ui.innerHTML=f; faceNums(); clockUpdate();
     }
