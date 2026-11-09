@@ -517,7 +517,7 @@ input[type=range]{accent-color:#bfe0cb}
     for(j=0;j<h;j++)for(i=0;i<w;i++){r=Math.sqrt(Math.pow((i/w-.5)/.5,2)+Math.pow((j/h-.465)/.5,2));t=Math.max(0,Math.min(1,(1-r)/.55));m=t*t*(3-2*t);var k=(j*w+i)*4;im.data[k]=im.data[k+1]=im.data[k+2]=255;im.data[k+3]=Math.round(m*255)}
     x.putImageData(im,0,0)}
   function size(){D=Math.min(devicePixelRatio||1,1.4)*QF;var w=Math.max(2,Math.round(c.clientWidth*D)),h=Math.max(2,Math.round(c.clientHeight*D));
-    if(c.width!==w||c.height!==h||!G){c.width=w;c.height=h;W=w;H=h;var mob=W/H<.9,ew=mob?W*.96:Math.min(W*.56,H*1.1),eh=ew*494/640,cx=mob?W*.5:W*.7,cy=mob?H*.2:H*.5;
+    if(c.width!==w||c.height!==h||!G){c.width=w;c.height=h;W=w;H=h;var mob=W/H<.9,ew=mob?W*.96:Math.min(W*.6,H*1.18),eh=ew*494/640,cx=mob?W*.5:W*.7,cy=mob?H*.2:H*.5;
       G={cx:cx,cy:cy,ew:ew,eh:eh,ex0:cx-ew/2,ey0:cy-eh/2,ix:cx-ew/2+.42*ew,iy:cy-eh/2+.564*eh,mob:mob};
       A=mkc(W/4,H/4);Ag=A.getContext('2d');E=mkc(ew,eh);Eg=E.getContext('2d');Gc=mkc(ew,eh);Gg=Gc.getContext('2d');Cc=mkc(ew,eh);Cg=Cc.getContext('2d');Mk=mkc(ew,eh);Mg=Mk.getContext('2d');feather()}}
   var RIB=[[.2,.09,1.2,.5,.085,.95],[.8,.06,1.3,4.1,.08,.7],[.5,.05,.8,1.4,.06,.35]];
@@ -530,6 +530,7 @@ input[type=range]{accent-color:#bfe0cb}
     Ag.globalAlpha=1;Ag.globalCompositeOperation='source-atop';Ag.fillStyle='rgb(206,215,221)';Ag.fillRect(0,0,A.width,A.height);
     Ag.globalCompositeOperation='destination-in';var lg=Ag.createLinearGradient(0,0,A.width*.62,0);lg.addColorStop(0,'rgba(0,0,0,.4)');lg.addColorStop(1,'rgba(0,0,0,1)');Ag.fillStyle=lg;Ag.fillRect(0,0,A.width,A.height);
     if(G.mob){var vg=Ag.createLinearGradient(0,0,0,A.height);vg.addColorStop(0,'rgba(0,0,0,1)');vg.addColorStop(.3,'rgba(0,0,0,.8)');vg.addColorStop(.4,'rgba(0,0,0,.14)');vg.addColorStop(1,'rgba(0,0,0,.14)');Ag.fillStyle=vg;Ag.fillRect(0,0,A.width,A.height)}
+    var fr=Ag.createRadialGradient(G.cx*s,G.cy*s,0,G.cx*s,G.cy*s,Math.max(G.ew,G.eh*1.6)*.95*s);fr.addColorStop(0,'rgba(0,0,0,1)');fr.addColorStop(.5,'rgba(0,0,0,.8)');fr.addColorStop(1,'rgba(0,0,0,.28)');Ag.fillStyle=fr;Ag.fillRect(0,0,A.width,A.height);
     Ag.globalCompositeOperation='source-over'}
   function eye(t){var ew=E.width,eh=E.height,x,th;
     Eg.globalCompositeOperation='source-over';Eg.globalAlpha=1;
@@ -539,15 +540,16 @@ input[type=range]{accent-color:#bfe0cb}
     for(x=0;x<ew;x+=2)column(Mg,SPM,x,RC(G.ex0+x,t)-G.ey0,th,1,2);
     Mg.globalAlpha=1;
     Cg.globalCompositeOperation='source-over';Cg.clearRect(0,0,ew,eh);Cg.drawImage(E,0,0);Cg.globalCompositeOperation='destination-in';Cg.drawImage(Mk,0,0);Cg.globalCompositeOperation='source-over';
-    Gg.drawImage(Cc,0,0);
+    Gg.drawImage(Cc,0,0);Gg.globalCompositeOperation='overlay';Gg.globalAlpha=.2;Gg.drawImage(E,0,0);Gg.globalAlpha=1;Gg.globalCompositeOperation='source-over';
     Gg.globalCompositeOperation='screen';Gg.globalAlpha=.2;var as=A.width/W;Gg.drawImage(A,G.ex0*as,G.ey0*as,G.ew*as,G.eh*as,0,0,ew,eh);Gg.globalAlpha=1;Gg.globalCompositeOperation='destination-in';Gg.drawImage(FM,0,0,ew,eh);Gg.globalCompositeOperation='source-over'}
   function draw(){size();sx+=(mx-sx)*.05;sy+=(my-sy)*.05;
-    var t=window.__sheen!=null?window.__sheen:performance.now()/1000;
+    var t=(window.__sheen!=null?window.__sheen:performance.now()/1000)*2.3;
     var bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#06110e');bg.addColorStop(.6,'#0a1c17');bg.addColorStop(1,'#0e2a24');g.fillStyle=bg;g.fillRect(0,0,W,H);
     aurora(t);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.globalCompositeOperation='screen';g.globalAlpha=1;g.drawImage(A,0,0,W,H);
     g.globalCompositeOperation='source-over';g.globalAlpha=1;
     eye(t);g.drawImage(Gc,G.ex0,G.ey0);
     
+    var vv=g.createRadialGradient(G.cx,G.cy,Math.min(G.ew,G.eh*1.5)*.25,G.cx,G.cy,Math.max(W,H)*.75);vv.addColorStop(0,'rgba(4,12,10,0)');vv.addColorStop(1,'rgba(4,12,10,.5)');g.fillStyle=vv;g.fillRect(0,0,W,H);
     var v=g.createLinearGradient(0,H*.3,0,0);v.addColorStop(0,'rgba(6,17,14,0)');v.addColorStop(1,'rgba(6,17,14,.55)');g.fillStyle=v;g.fillRect(0,0,W,H*.3)}
   window.__atelierSeek=function(t){return new Promise(function(res){window.__sheen=t;V.pause();var d=V.duration||17;V.currentTime=t%d;V.addEventListener('seeked',function f(){V.removeEventListener('seeked',f);requestAnimationFrame(function(){window.__hold=1;draw();res()})})})};
   window.__atelierDraw=function(t){window.__hold=1;window.__sheen=t;draw()};
