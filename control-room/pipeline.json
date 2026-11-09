@@ -1,1 +1,31 @@
-{"updated":"2026-11-08","prospects":[]}
+{
+ "updated": "2026-11-08",
+ "note": "Counts only. Names are kept in the private Hunt Board.",
+ "prospects": [
+  {
+   "name": "Milton barbers",
+   "stage": "Found",
+   "count": 11
+  },
+  {
+   "name": "Georgetown barbers",
+   "stage": "Found",
+   "count": 8
+  },
+  {
+   "name": "Milton salons",
+   "stage": "Found",
+   "count": 10
+  },
+  {
+   "name": "Milton dental clinics",
+   "stage": "Found",
+   "count": 10
+  },
+  {
+   "name": "Barber, your own",
+   "stage": "Warm",
+   "count": 1
+  }
+ ]
+}
