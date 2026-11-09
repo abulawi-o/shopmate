@@ -160,7 +160,7 @@ button{cursor:pointer}
       <h1>Control Room</h1>
       <span class="chip" id="modechip">CONNECTING…</span>
     </header>
-    <div class="hint">Click the floor to walk · W A S D to fly · Q E up down · drag to rotate · shift-drag to pan · scroll to zoom · click a robot to chat · click an open seat to add an agent</div>
+    <div class="hint">Click the floor to walk · arrows or W A S D to walk · Shift to run · Q E turn · drag to rotate · right-drag to pan · scroll to zoom · click a robot to chat · click an open seat to add an agent</div>
     <div class="stage-ctl"><button type="button" class="ctl" id="btn-king" aria-pressed="false">Follow me</button></div>
     <div class="feed" id="feed" aria-hidden="true"></div>
     <div class="activity"><span class="dot"></span><span class="lab">LIVE</span><span id="activity">The control room is at work.</span></div>
@@ -1181,14 +1181,14 @@ function init3D(){
 
   /* camera */
   var cam={az:0.18,pol:0.84,dist:44,base:44,tdist:44,target:new V3(0,3.0,1),ttarget:new V3(0,3.0,1)};
-  var free=new V3(0,3.0,1),keys={};
+  var free=new V3(0,3.0,1),keys={},chase=false,driven=false;
   var ptrs={},downAt=null,moved=0,pinch=0;
   canvas.addEventListener('pointerdown',function(e){canvas.setPointerCapture(e.pointerId); ptrs[e.pointerId]={x:e.clientX,y:e.clientY}; if(Object.keys(ptrs).length===1){downAt={x:e.clientX,y:e.clientY}; moved=0;} pinch=0;});
   canvas.addEventListener('pointermove',function(e){
     var p=ptrs[e.pointerId]; if(!p) return; var ids=Object.keys(ptrs);
     if(ids.length===2){var o=ptrs[ids[0]==e.pointerId?ids[1]:ids[0]]; var d=Math.hypot(e.clientX-o.x,e.clientY-o.y); if(pinch){cam.base=Math.max(3,Math.min(120,cam.base*(pinch/d)));} pinch=d; p.x=e.clientX; p.y=e.clientY; moved=99; return;}
     var dx=e.clientX-p.x,dy=e.clientY-p.y; p.x=e.clientX; p.y=e.clientY; moved+=Math.abs(dx)+Math.abs(dy);
-    if(e.shiftKey||(e.buttons&2)||(e.buttons&4)){state.follow=false; state.followKing=false; var pk=cam.dist*0.0016; free.x+=(-Math.cos(cam.az)*dx-Math.sin(cam.az)*dy)*pk; free.z+=(Math.sin(cam.az)*dx-Math.cos(cam.az)*dy)*pk; moved=99; return;}
+    if(e.shiftKey||(e.buttons&2)||(e.buttons&4)){state.follow=false; state.followKing=false; if(chase){chase=false; free.set(cam.target.x,cam.target.y,cam.target.z);} var pk=cam.dist*0.0016; free.x+=(-Math.cos(cam.az)*dx-Math.sin(cam.az)*dy)*pk; free.z+=(Math.sin(cam.az)*dx-Math.cos(cam.az)*dy)*pk; moved=99; return;}
     cam.az-=dx*0.006; cam.pol=Math.max(0.05,Math.min(1.55,cam.pol-dy*0.005));
   });
   function up(e){
@@ -1199,7 +1199,7 @@ function init3D(){
   canvas.addEventListener('contextmenu',function(e){e.preventDefault();});
   canvas.addEventListener('wheel',function(e){e.preventDefault();
     var f=Math.exp(Math.max(-120,Math.min(120,e.deltaY))*0.0015);
-    if(f<1&&!state.follow&&!state.followKing){ /* zoom toward the point under the cursor */
+    if(f<1&&!state.follow&&!state.followKing&&!chase){ /* zoom toward the point under the cursor */
       var r=canvas.getBoundingClientRect(); ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1); ray.setFromCamera(ndc,camera);
       var hp=new V3(); if(ray.ray.intersectPlane(plane,hp)){var k2=(1-f)*0.9; free.x+=(hp.x-free.x)*k2; free.z+=(hp.z-free.z)*k2; free.y+=(FLOOR+1-free.y)*k2*0.5;}
     }
@@ -1325,12 +1325,22 @@ function init3D(){
     if(markerT>0){markerT-=dt; marker.material.opacity=Math.max(0,Math.min(1,markerT/0.6)); var sc2=1+(1.2-markerT)*0.6; marker.scale.set(sc2,sc2,sc2);} else marker.material.opacity=0;
     if(state.followKing){cam.ttarget.set(kingAg.g.position.x,1.2,kingAg.g.position.z); cam.tdist=Math.min(cam.base,22);}
     else if(state.follow&&sel){cam.ttarget.set(sel.g.position.x,1.2,sel.g.position.z); cam.tdist=Math.min(cam.base,19);}
+    else if(chase){cam.ttarget.set(kingAg.g.position.x,1.4,kingAg.g.position.z); cam.tdist=cam.base;}
     else {cam.ttarget.copy(free); cam.tdist=cam.base;}
-    (function(){var mv=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0),st=(keys.d?1:0)-(keys.a?1:0),vy=(keys.e?1:0)-(keys.q?1:0),tn=(keys.arrowright?1:0)-(keys.arrowleft?1:0);
-      if(tn) cam.az-=tn*dt*1.6;
-      if(mv||st||vy){ if(state.follow||state.followKing){free.set(cam.target.x,cam.target.y,cam.target.z);} state.follow=false; state.followKing=false;
-        var sp=(keys.shift?34:14)*dt*Math.max(0.35,cam.base/44+0.2), fx=-Math.sin(cam.az),fz=-Math.cos(cam.az),rx=Math.cos(cam.az),rz=-Math.sin(cam.az);
-        free.x=Math.max(-70,Math.min(70,free.x+(fx*mv+rx*st)*sp)); free.z=Math.max(-70,Math.min(70,free.z+(fz*mv+rz*st)*sp)); free.y=Math.max(0.6,Math.min(40,free.y+vy*sp)); }
+    (function(){
+      var mv=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0),st=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),tn=(keys.e?1:0)-(keys.q?1:0);
+      if(tn) cam.az-=tn*dt*1.8;
+      if(mv||st){
+        if(state.follow||state.followKing){state.follow=false; state.followKing=false;} chase=true;
+        var fx=-Math.sin(cam.az),fz=-Math.cos(cam.az),rx=Math.cos(cam.az),rz=-Math.sin(cam.az);
+        var dx=fx*mv+rx*st,dz=fz*mv+rz*st,L=Math.hypot(dx,dz)||1; dx/=L; dz/=L;
+        var kp=kingAg.g.position, nx=Math.max(-22,Math.min(22,kp.x+dx*1.2)), nz=Math.max(-10,Math.min(18,kp.z+dz*1.2));
+        kingAg.speed=keys.shift?6:3.6; kingAg.arrive=null; kingAg.target=new V3(nx,FLOOR,nz); kingAg.state='walk'; kingAg.walkLabel='Walking'; driven=true;
+      } else if(driven){
+        driven=false; kingAg.state='idle'; kingAg.target=null; kingAg.speed=3.3;
+        var best=null,bd=2.4; AG.forEach(function(a2){var r2=run[a2.id]; var d2=Math.hypot(r2.g.position.x-kingAg.g.position.x,r2.g.position.z-kingAg.g.position.z); if(d2<bd){bd=d2; best=a2;}});
+        if(best&&best.id!==state.sel){select(best.id); speak(best.id,'At your service, King.',3000); setActivity('The King meets '+best.name);}
+      }
     })();
     var k=Math.min(1,dt*3.5); cam.target.lerp(cam.ttarget,k); cam.dist+=(cam.tdist-cam.dist)*k;
     var fit=camera.aspect<1.1?1.5:1; var d=cam.dist*fit;
