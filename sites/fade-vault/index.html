@@ -1,0 +1,499 @@
+<title>Fade Vault Barbershop Concept</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#08090b;--teal:#14181e;--teal2:#222a34;--cream:#eef1f4;--cream2:#a9b2bd;--brick:#d9a441;--ink:#08090b;--line:rgba(238,241,244,.14);--serif:'Barlow Condensed','Arial Narrow',sans-serif;--sans:'Manrope',system-ui,-apple-system,Segoe UI,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;overflow-x:clip;background:var(--bg);color:var(--cream);font:400 17px/1.65 var(--sans);padding-inline:max(18px,env(safe-area-inset-left,0px)) max(18px,env(safe-area-inset-right,0px));-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto}
+a{color:inherit}
+header.nav{position:fixed;inset:0 0 auto 0;z-index:20;padding:calc(14px + env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-left,0px)) 14px;display:flex;justify-content:space-between;align-items:center;gap:16px;background:linear-gradient(180deg,rgba(8,9,11,.92),rgba(8,9,11,0));backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.logo{font:700 24px/1 var(--serif);letter-spacing:.28em;text-transform:uppercase;text-decoration:none;white-space:nowrap}
+.logo small{display:block;font:500 9px var(--sans);letter-spacing:.42em;margin-top:5px;color:var(--cream2)}
+nav a.l{font:500 13px var(--sans);letter-spacing:.16em;text-transform:uppercase;text-decoration:none;margin-right:22px;color:var(--cream2)}
+nav a.l:hover{color:var(--cream)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:700 13px var(--sans);letter-spacing:.16em;text-transform:uppercase;text-decoration:none;border:1px solid var(--cream);color:var(--ink);background:var(--cream);padding:0 24px;min-height:48px;cursor:pointer;transition:background .25s,color .25s,transform .25s}
+.btn:hover{background:transparent;color:var(--cream)}
+.btn.ghost{background:transparent;color:var(--cream)}
+.btn.ghost:hover{background:var(--cream);color:var(--ink)}
+@media(max-width:760px){nav a.l{display:none}}
+/* hero */
+.hero{position:relative;min-height:100vh;min-height:100svh;display:grid;align-items:end;width:100vw;margin-left:calc(50% - 50vw);padding:140px max(18px,calc(50vw - 590px)) 56px;overflow:hidden;background:radial-gradient(120% 80% at 50% 0%,#1a2230,#08090b 70%)}
+.hero>div:first-child{position:relative;z-index:2}
+#vault{position:absolute;inset:0;z-index:1}
+#vault canvas{width:100%!important;height:100%!important;display:block}
+.hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(8,9,11,.35) 0%,rgba(8,9,11,0) 35%,rgba(8,9,11,.82) 100%)}
+.hero .est{font:600 13px var(--sans);letter-spacing:.5em;text-transform:uppercase;color:var(--cream2);margin-bottom:14px}
+.hero h1{font:700 clamp(84px,21vw,300px)/.84 var(--serif);letter-spacing:.01em;margin:0;text-transform:uppercase}
+.hero h1 span{display:block;font:500 clamp(20px,3.6vw,44px)/1 var(--serif);letter-spacing:.62em;margin-top:18px;padding-left:.2em;color:var(--cream2)}
+.hero p{max-width:34ch;font-size:19px;color:var(--cream);margin:30px 0 26px}
+.hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+.hero .rate{position:absolute;right:max(18px,env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%) rotate(90deg);transform-origin:right center;font:500 12px var(--sans);letter-spacing:.4em;text-transform:uppercase;color:var(--cream2)}
+@media(max-width:760px){.hero .rate{display:none}}
+/* ticker */
+.tick{overflow:hidden;border-block:1px solid var(--line);width:100vw;margin-left:calc(50% - 50vw);background:var(--bg)}
+.tick div{display:flex;gap:48px;white-space:nowrap;width:max-content;padding:20px 0;font:500 28px/1 var(--serif);letter-spacing:.2em;text-transform:uppercase;color:var(--cream2);animation:slide 40s linear infinite}
+.tick i{font-style:normal;color:var(--brick)}
+@keyframes slide{to{transform:translateX(-50%)}}
+section{padding-block:96px}
+.eyebrow{font:700 12px var(--sans);letter-spacing:.42em;text-transform:uppercase;color:var(--brick);margin:0 0 14px}
+h2{font:600 clamp(40px,7vw,84px)/.98 var(--serif);margin:0 0 24px;text-wrap:balance}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.stat{background:var(--bg);padding:34px 24px}
+.stat b{display:block;font:600 64px/1 var(--serif)}
+.stat span{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream2)}
+/* menu */
+.menu{display:grid;gap:0;margin-top:30px}
+.item{display:grid;grid-template-columns:1fr auto;gap:6px 24px;align-items:baseline;padding:26px 0;border-top:1px solid var(--line)}
+.item:last-child{border-bottom:1px solid var(--line)}
+.item h3{font:600 clamp(26px,4vw,40px)/1.1 var(--serif);margin:0}
+.item .p{font:600 clamp(28px,4vw,42px)/1 var(--serif);color:var(--cream)}
+.item small{grid-column:1/-1;color:var(--cream2);font-size:14px}
+.note{color:var(--cream2);font-size:14px;margin-top:18px}
+/* barbers */
+.crew{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-top:34px}
+.bcard{position:relative;border:1px solid var(--line);padding:26px;min-height:300px;display:flex;flex-direction:column;justify-content:flex-end;background:linear-gradient(180deg,rgba(20,24,30,.0),rgba(20,24,30,.55)),radial-gradient(90% 70% at 30% 0%,var(--teal2),var(--bg));overflow:hidden;transition:transform .4s,border-color .4s}
+.bcard:hover{transform:translateY(-6px);border-color:var(--cream2)}
+.bcard .mono{position:absolute;top:10px;left:18px;font:600 150px/1 var(--serif);color:rgba(238,241,244,.07)}
+.bcard h3{font:600 34px/1 var(--serif);margin:0 0 6px}
+.bcard p{margin:0 0 18px;color:var(--cream2);font-size:14px}
+.bcard a{font:700 12px var(--sans);letter-spacing:.2em;text-transform:uppercase;text-decoration:none;border-bottom:1px solid var(--brick);padding-bottom:3px;align-self:flex-start}
+/* book */
+.book{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:start}
+@media(max-width:860px){.book{grid-template-columns:1fr;gap:30px}}
+form{display:grid;gap:16px}
+label{display:grid;gap:7px;font:700 12px var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--cream2)}
+input,select{font:400 17px var(--sans);color:var(--cream);background:transparent;border:0;border-bottom:1px solid var(--cream2);padding:12px 2px;min-height:48px;border-radius:0}
+select option{color:#111}
+input::placeholder{color:#7d8793}
+input:focus,select:focus{outline:none;border-bottom-color:var(--brick)}
+.msg{min-height:1.4em;color:var(--cream);font-weight:700}
+.tiny{font-size:13px;color:var(--cream2)}
+/* visit */
+.visit{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.vbox{border:1px solid var(--line);padding:26px}
+.vbox h3{font:600 30px/1 var(--serif);margin:0 0 10px}
+.vbox p{margin:0;color:var(--cream2)}
+.vbox .num{font:600 28px var(--serif);color:var(--cream);user-select:all}
+footer{border-top:1px solid var(--line);padding:34px 0 48px;margin-top:40px;display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;color:var(--cream2);font-size:13px}
+.banner{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;background:var(--cream);color:var(--ink);font:700 11px var(--sans);letter-spacing:.18em;text-transform:uppercase;padding:9px 16px;white-space:nowrap}
+.rv{opacity:0;transform:translateY(28px);transition:opacity .9s ease,transform .9s ease}
+.rv.in{opacity:1;transform:none}
+.gal{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:190px;gap:12px;margin-top:30px}
+.gal div{position:relative;border:1px solid var(--line);background:repeating-linear-gradient(135deg,rgba(238,241,244,.04) 0 14px,transparent 14px 28px),radial-gradient(90% 90% at 30% 10%,var(--teal2),var(--bg));display:flex;align-items:flex-end;padding:14px;font:700 11px var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--cream2)}
+.gal div:nth-child(1){grid-column:span 2;grid-row:span 2}
+.gal div:nth-child(4){grid-column:span 2}
+@media(max-width:760px){.gal{grid-template-columns:repeat(2,1fr);grid-auto-rows:150px}.gal div:nth-child(1){grid-column:span 2;grid-row:span 1}.gal div:nth-child(4){grid-column:span 2}}
+.sys{display:grid;grid-template-columns:200px 1fr;border:1px solid var(--line);background:#090b0e;margin-top:34px;overflow:hidden}
+@media(max-width:860px){.sys{grid-template-columns:1fr}}
+.sys aside{border-right:1px solid var(--line);padding:22px 18px;background:#0c0e12}
+@media(max-width:860px){.sys aside{border-right:0;border-bottom:1px solid var(--line);display:flex;gap:14px;flex-wrap:wrap;padding:14px}}
+.sys aside b{display:block;font:600 20px var(--serif);letter-spacing:.2em;text-transform:uppercase;margin-bottom:16px}
+@media(max-width:860px){.sys aside b{width:100%;margin:0}}
+.sys aside span{display:block;padding:9px 0;font-size:14px;color:var(--cream2)}
+.sys aside span.on{color:var(--cream);border-left:2px solid var(--brick);padding-left:10px;margin-left:-12px}
+@media(max-width:860px){.sys aside span.on{margin-left:0}}
+.sys main{padding:24px;display:grid;gap:22px;min-width:0}
+.sys h4{margin:0 0 10px;font:700 12px var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--brick)}
+.req{display:grid;grid-template-columns:1fr auto;gap:4px 14px;align-items:center;padding:12px 0;border-top:1px solid var(--line);font-size:15px}
+.req small{grid-column:1;color:var(--cream2)}
+.req em{grid-row:1/3;grid-column:2;font:700 11px var(--sans);letter-spacing:.16em;text-transform:uppercase;font-style:normal;border:1px solid var(--cream2);padding:7px 12px}
+.req em.ok{background:var(--cream);color:var(--ink);border-color:var(--cream)}
+.tog{text-transform:none;letter-spacing:0;font-weight:400;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:11px 0;border-top:1px solid var(--line);font-size:15px;cursor:pointer;position:relative}
+.tog input{position:absolute;opacity:0;pointer-events:none}
+.tog i{width:44px;height:26px;border-radius:99px;background:#2b333d;position:relative;flex:none;transition:background .25s}
+.tog i::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--cream);transition:transform .25s}
+.tog input:checked+i{background:var(--brick)}
+.tog input:checked+i::after{transform:translateX(18px)}
+.tog input:focus-visible+i{outline:3px solid var(--brick);outline-offset:3px}
+.bub{max-width:46ch;background:var(--teal);border-radius:14px 14px 14px 3px;padding:12px 14px;font-size:14px;color:var(--cream);line-height:1.5}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.sample{font:700 10px var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--cream2);border:1px solid var(--line);padding:3px 8px;margin-left:8px;vertical-align:middle}
+.olink{color:var(--cream);text-underline-offset:4px}
+#socials{display:inline-flex;gap:8px;margin-right:16px;vertical-align:middle}
+#socials a,.socdemo .ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(238,241,244,.3);color:var(--cream);transition:border-color .2s,color .2s}
+#socials a:hover,#socials a:focus-visible{border-color:var(--brick);color:var(--brick)}
+#socials svg,.socdemo svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#socials svg .f,.socdemo svg .f{fill:currentColor;stroke:none}
+.socdemo .srow{display:grid;grid-template-columns:38px 1fr 44px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.socdemo input[type=text]{background:transparent;border:0;border-bottom:1px solid var(--cream2);color:var(--cream);font:400 14px var(--sans);padding:8px 2px;min-width:0;width:100%}
+.socdemo .tog{padding:0;border:0;position:relative}
+.socdemo .ic{border-color:var(--line)}
+@media(max-width:760px){#socials{margin-right:8px}#socials a{width:34px;height:34px}}
+.fs{border:0;padding:0;margin:0;min-width:0}
+.fs legend,.lab{font:700 12px var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--cream2);padding:0;margin-bottom:9px;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:46px;padding:0 16px;border:1px solid var(--line);background:transparent;color:var(--cream);font:500 15px var(--sans);cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+.chip small{display:block;font-size:12px;color:var(--cream2)}
+.chip:hover:not(:disabled){border-color:var(--cream2)}
+.chip[aria-pressed="true"]{background:var(--cream);color:var(--ink);border-color:var(--cream)}
+.chip[aria-pressed="true"] small{color:var(--ink)}
+.chip:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
+.chip:focus-visible,.dd:focus-visible{outline:3px solid var(--brick);outline-offset:2px}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:520px){.pick{grid-template-columns:1fr}}
+.fld{position:relative;min-width:0}
+.dd{width:100%;min-height:50px;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;color:var(--cream);border:1px solid var(--cream2);padding:0 14px;font:500 16px var(--sans);cursor:pointer;text-align:left}
+.dd svg{width:20px;height:20px;flex:none;stroke:var(--cream);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.pop{position:absolute;z-index:30;top:calc(100% + 6px);left:0;min-width:100%;width:max-content;max-width:min(92vw,340px);background:#0c0e12;border:1px solid var(--cream2);padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+.pop[hidden]{display:none}
+.calh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font:600 20px var(--serif)}
+.calh button{width:40px;height:40px;background:transparent;border:1px solid var(--line);color:var(--cream);font-size:18px;cursor:pointer}
+.calh button:disabled{opacity:.3;cursor:not-allowed}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.calg b{font:700 10px var(--sans);letter-spacing:.14em;color:var(--cream2);padding:6px 0}
+.calg button{aspect-ratio:1;min-height:38px;background:transparent;border:1px solid transparent;color:var(--cream);font:500 15px var(--sans);cursor:pointer}
+.calg button:hover:not(:disabled){border-color:var(--cream2)}
+.calg button[aria-pressed="true"]{background:var(--cream);color:var(--ink)}
+.calg button.today{border-color:var(--brick)}
+.calg button:disabled{opacity:.28;cursor:not-allowed}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-height:260px;overflow:auto}
+.slots .chip{padding:0 6px;min-height:42px;font-size:14px}
+.slots .none{grid-column:1/-1;margin:0;color:var(--cream2);font-size:14px}
+.sum{margin:0;color:var(--cream2);font-size:15px;min-height:1.5em}
+.sum b{color:var(--cream)}
+.who{display:grid;gap:14px}
+.chk{display:flex;gap:10px;align-items:flex-start;text-transform:none;letter-spacing:0;font:400 14px var(--sans);color:var(--cream2)}
+.chk input{min-height:0;margin-top:3px;accent-color:var(--brick)}
+#req:disabled{opacity:.45;cursor:not-allowed}
+.pop.clock{width:292px;max-width:92vw;left:auto;right:0}
+@media(max-width:520px){.pop.clock{left:0;right:auto}}
+.ch{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:10px}
+.ch input{width:64px;height:56px;text-align:center;font:600 34px var(--serif);background:#12161c;color:var(--cream);border:1px solid var(--line);padding:0;min-height:0}
+.ch input.on{border-color:var(--brick);background:#1b222b}
+.ch .sep{font:600 34px var(--serif)}
+.ch .ap{display:grid;gap:4px;margin-left:8px}
+.ch .ap button{width:48px;height:26px;border:1px solid var(--line);background:transparent;color:var(--cream);font:700 12px var(--sans);letter-spacing:.1em;cursor:pointer}
+.ch .ap button[aria-pressed="true"]{background:var(--cream);color:var(--ink);border-color:var(--cream)}
+.face{display:block;width:100%;height:auto;touch-action:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+.face text{font:500 15px var(--sans);fill:var(--cream);pointer-events:none}
+.face text.sel{fill:var(--ink);font-weight:700}
+.face .hand{stroke:var(--brick);stroke-width:2}
+.face .knob{fill:var(--brick)}
+.face .tick{fill:var(--cream2);opacity:.5}
+.cmsg{min-height:2.6em;margin:8px 0 6px;font-size:13px;color:var(--cream2);line-height:1.4}
+.cmsg.bad{color:#f0a08c}
+.cfoot{display:flex;gap:8px}
+.cfoot .btn{flex:1;min-height:44px}
+@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}.tick div{animation:none}html{scroll-behavior:auto}}
+:focus-visible{outline:3px solid var(--brick);outline-offset:3px}
+</style>
+
+<header class="nav">
+  <a class="logo" href="#top" translate="no">Fade Vault<small>Barbershop</small></a>
+  <nav><a class="l" href="#services">Services</a><a class="l" href="#barbers">Barbers</a><a class="l" href="#visit">Visit</a><a class="l" id="ownerNav" href="../../owner.html">Owner</a><span id="socials"></span><a class="btn" href="#book">Book</a></nav>
+</header>
+
+<div class="wrap" id="top">
+  <div class="hero">
+    <div>
+      <div class="est">Gordon Krantz Ave &nbsp;·&nbsp; Milton, Ontario</div>
+      <h1 translate="no">Fade<br>Vault<span>Barbershop</span></h1>
+      <p>Sharp fades, clean lines and a shop worth the walk in.</p>
+      <div class="cta"><a class="btn" href="#book">Book your chair</a><a class="btn ghost" href="#services">See services</a></div>
+    </div>
+    <div id="vault" aria-hidden="true"></div>
+  </div>
+
+  <div class="tick" aria-hidden="true"><div><span>Fades</span><i>◆</i><span>Clean haircuts</span><i>◆</i><span>Kids' cuts</span><i>◆</i><span>Beard line-ups</span><i>◆</i><span>Fades</span><i>◆</i><span>Clean haircuts</span><i>◆</i><span>Kids' cuts</span><i>◆</i><span>Beard line-ups</span><i>◆</i><span>Fades</span><i>◆</i><span>Clean haircuts</span><i>◆</i><span>Kids' cuts</span><i>◆</i><span>Beard line-ups</span><i>◆</i><span>Fades</span><i>◆</i><span>Clean haircuts</span><i>◆</i><span>Kids' cuts</span><i>◆</i><span>Beard line-ups</span><i>◆</i></div></div>
+
+  <section class="rv" aria-label="At a glance">
+    <div class="stats">
+      <div class="stat"><b>4.9</b><span>Google rating</span></div>
+      <div class="stat"><b>467</b><span>Google reviews</span></div>
+      <div class="stat"><b>7</b><span>Days a week</span></div>
+      <div class="stat"><b>10–7</b><span>Weekday hours</span></div>
+    </div>
+  </section>
+
+  <section id="services" class="rv">
+    <p class="eyebrow">Services</p>
+    <h2>The menu.<br>Cut right.</h2>
+    <div class="menu">
+      <div class="item"><h3>Haircut</h3><span class="p">Clean</span><small>Scissor and clipper work, finished clean</small></div>
+      <div class="item"><h3>Fade</h3><span class="p">Sharp</span><small>Skin, low, mid or high. Tell the barber how you like it</small></div>
+      <div class="item"><h3>Haircut and Beard</h3><span class="p">Full</span><small>Haircut plus beard shape and line-up</small></div>
+      <div class="item"><h3>Kids' Cut</h3><span class="p">Easy</span><small>Patient, quick, parents welcome to stay</small></div>
+    </div>
+    <p class="note">Prices and exact times are set by the shop. They go here when the site is set up.</p>
+  </section>
+
+  <section id="barbers" class="rv">
+    <p class="eyebrow">The barbers</p>
+    <h2>Pick your barber.</h2>
+    <div class="crew">
+      <div class="bcard"><span class="mono" aria-hidden="true">M</span><h3>Malik</h3><p>Fades, haircuts, beard line-ups. Named in the shop's reviews.</p><a href="#book" data-barber="Malik">Book with Malik</a></div>
+      <div class="bcard"><span class="mono" aria-hidden="true">V</span><h3>First free barber</h3><p>Pick a time and the shop puts you with whoever is open.</p><a href="#book" data-barber="">Book any barber</a></div>
+    </div>
+    <p class="note">The rest of the team and their photos are added once the shop confirms them.</p>
+  </section>
+
+  <section id="gallery" class="rv">
+    <p class="eyebrow">The shop</p>
+    <h2>Step inside.</h2>
+    <div class="gal"><div>Hexagon-light ceiling</div><div>Fade close-up</div><div>Chairs</div><div>Storefront</div></div>
+    <p class="note">These slots show the shop's own pictures once the owner approves them.</p>
+  </section>
+
+  <section id="book" class="rv">
+    <div class="book">
+      <div>
+        <p class="eyebrow">Book a chair</p>
+        <h2>Tell us when.<br>We will confirm.</h2>
+        <p style="color:var(--cream2);max-width:40ch">Leave your name and number, choose a barber and a day. The shop confirms by text, so you never wait on hold.</p>
+      </div>
+      <form id="f" novalidate>
+        <fieldset class="fs"><legend>Service</legend><div class="chips" id="cSvc"></div></fieldset>
+        <fieldset class="fs"><legend>Barber</legend><div class="chips" id="cBar"></div></fieldset>
+        <div class="pick">
+          <div class="fld"><span class="lab" id="dLab">Date</span>
+            <button type="button" class="dd" id="dateBtn" aria-haspopup="dialog" aria-expanded="false" aria-labelledby="dLab dateTxt"><span id="dateTxt">Choose a date</span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></button>
+            <div class="pop" id="calPop" role="dialog" aria-label="Choose a date" hidden></div></div>
+          <div class="fld"><span class="lab" id="tLab">Time</span>
+            <button type="button" class="dd" id="timeBtn" aria-haspopup="dialog" aria-expanded="false" aria-labelledby="tLab timeTxt"><span id="timeTxt">Choose a time</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></button>
+            <div class="pop clock" id="timePop" role="dialog" aria-label="Choose a time" hidden><div id="clockUI"></div></div></div>
+        </div>
+        <p class="sum" id="sum" aria-live="polite">Pick a date and time to see your booking.</p>
+        <div id="who" hidden class="who">
+          <label>Name<input id="fName" name="name" autocomplete="name" maxlength="60" placeholder="First and last name"></label>
+          <label>Mobile number<input id="fPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="905 555 0123"></label>
+          <label class="chk"><input type="checkbox" id="fOk"><span>Text me about this appointment (confirmation and reminder). Reply STOP any time.</span></label>
+        </div>
+        <button class="btn" id="req" type="submit" disabled>Request this time</button>
+        <p class="msg" id="msg" role="status"></p>
+        <p class="tiny">Concept preview. Nothing is sent or saved until the shop goes live. Hours are from the shop's Google listing. Service times are placeholders.</p>
+      </form>
+    </div>
+  </section>
+
+  <section id="visit" class="rv">
+    <p class="eyebrow">Visit</p>
+    <h2>Come in and sit down.</h2>
+    <div class="visit">
+      <div class="vbox"><h3>Address</h3><p>490 Gordon Krantz Ave<br>Milton, Ontario L9E 1Z5</p></div>
+      <div class="vbox"><h3>Call</h3><p class="num">(365) 822-5414</p></div>
+      <div class="vbox"><h3>Hours</h3><p>Mon to Fri 10 am to 7 pm<br>Saturday 10 am to 6 pm<br>Sunday 11 am to 5 pm</p></div>
+    </div>
+  </section>
+
+  <footer><span translate="no">Fade Vault Barbershop · Milton, Ontario</span><span><a class="olink" id="ownerFoot" href="../../owner.html">Owner login</a> &nbsp;·&nbsp; Website concept by Shopmate. Not the shop's live site.</span></footer>
+</div>
+<div class="banner">Concept preview</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="../../config.js"></script>
+<script src="../../connect.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  var P=[['instagram','Instagram'],['facebook','Facebook'],['tiktok','TikTok'],['youtube','YouTube'],['whatsapp','WhatsApp'],['google','Google Maps'],['x','X']];
+  var IC={instagram:'<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle class="f" cx="17.3" cy="6.7" r="1.1"/>',facebook:'<path class="f" d="M13.6 21v-7.6h2.6l.4-3h-3V8.5c0-.9.3-1.5 1.6-1.5h1.5V4.3c-.3 0-1.2-.1-2.2-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H8v3h2.7V21z"/>',tiktok:'<path d="M14 3.5v11.2a3.7 3.7 0 1 1-3.7-3.7"/><path d="M14 3.5c.3 2.4 1.9 4.1 4.5 4.3"/>',youtube:'<rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path class="f" d="M10 9.3v5.4l4.7-2.7z"/>',whatsapp:'<path d="M4 20l1.2-4.1A8 8 0 1 1 8.2 18.8z"/><path class="f" d="M9.2 8.6c.2 2.6 2.7 5.1 5.4 5.4l1-1.2-1.8-1-.8.7c-1-.4-1.8-1.2-2.2-2.2l.7-.8-1-1.8z"/>',google:'<path d="M12 21.2s-6.6-5.6-6.6-11a6.6 6.6 0 0 1 13.2 0c0 5.4-6.6 11-6.6 11z"/><circle cx="12" cy="10.2" r="2.4"/>',x:'<path d="M5 4.5l14 15M19 4.5l-14 15"/>'};
+  /* Preview default. When a shop is connected, the owner's Social links (set in the owner panel) replace this. */
+  var soc={google:{on:true,url:'https://www.google.com/maps/place/FADE+VAULT+BARBERSHOP/@43.4737371,-79.8657226,17z'}};
+  function href(k,u){u=String(u||'').trim();if(!u)return null;if(/^https:\/\//.test(u))return u;var h=u.replace(/^@/,'');
+    if(k==='whatsapp'){var d=h.replace(/\D/g,'');return d.length>6?'https://wa.me/'+d:null}
+    if(/\./.test(h)&&!/\s/.test(h))return 'https://'+h;
+    return ({instagram:'https://instagram.com/',facebook:'https://facebook.com/',tiktok:'https://tiktok.com/@',youtube:'https://youtube.com/@',x:'https://x.com/'})[k]?({instagram:'https://instagram.com/',facebook:'https://facebook.com/',tiktok:'https://tiktok.com/@',youtube:'https://youtube.com/@',x:'https://x.com/'})[k]+encodeURIComponent(h):null}
+  function draw(){
+    var h=P.filter(function(p){return soc[p[0]]&&soc[p[0]].on&&href(p[0],soc[p[0]].url)}).map(function(p){return '<a href="'+href(p[0],soc[p[0]].url)+'" target="_blank" rel="noopener" aria-label="'+p[1]+'"><svg viewBox="0 0 24 24" aria-hidden="true">'+IC[p[0]]+'</svg></a>'}).join('');
+    var b=document.getElementById('socials'); b.innerHTML=h; b.style.display=h?'inline-flex':'none';
+  }
+  draw();
+  if(window.LeoConnect){
+    var on=LeoConnect.ownerUrl(); ['ownerNav','ownerFoot'].forEach(function(id){var e=document.getElementById(id); if(e&&on) e.href=on});
+    LeoConnect.load().then(function(info){ if(info&&info.content&&info.content.socials&&typeof info.content.socials==='object'){soc=info.content.socials;draw()} }).catch(function(){});
+  }
+})();
+(function(){
+  var host=document.getElementById('vault'); if(!host||!window.THREE) return;
+  var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var R; try{R=new THREE.WebGLRenderer({antialias:true,alpha:true});}catch(e){host.style.display='none';return}
+  R.setPixelRatio(Math.min(2,window.devicePixelRatio||1)); host.appendChild(R.domElement);
+  var scene=new THREE.Scene(); scene.fog=new THREE.FogExp2(0x08090b,0.052);
+  var cam=new THREE.PerspectiveCamera(60,1,0.1,120);
+  /* Ceiling of hexagon light frames, like the shop's own ceiling. Camera glides through it like a drone. */
+  var HR=1.05, dx=1.5*HR, dz=Math.sqrt(3)*HR, NC=34, NR=110, CEIL=4.2, L=NR*dz;
+  var ring=new THREE.RingGeometry(HR*0.80,HR*0.93,6); ring.rotateX(Math.PI/2);
+  var im=new THREE.InstancedMesh(ring,new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide,fog:true}),NC*NR);
+  var m=new THREE.Matrix4(),col=new THREE.Color(),n=0,seed=7;
+  function rnd(){seed=(seed*16807)%2147483647;return (seed-1)/2147483646}
+  for(var c=0;c<NC;c++){for(var r=0;r<NR;r++){
+    var x=(c-NC/2)*dx, z=-r*dz-((c&1)?dz/2:0);
+    m.makeTranslation(x,CEIL,z); im.setMatrixAt(n,m);
+    var q=rnd(); col.setRGB(0.55,0.62,0.75).multiplyScalar(q>0.82?1.25:(q>0.5?0.75:0.38));
+    if(q>0.965) col.setRGB(1.0,0.72,0.26);
+    im.setColorAt(n,col); n++;
+  }}
+  im.instanceColor.needsUpdate=true; scene.add(im);
+  /* hexagon gates the camera flies through */
+  var gate=new THREE.RingGeometry(3.1,3.28,6), gm=new THREE.MeshBasicMaterial({color:0xd9a441,side:THREE.DoubleSide,fog:true}), gates=[];
+  for(var k=0;k<7;k++){var g=new THREE.Mesh(gate,gm); g.position.set(0,1.5,-14-k*26); g.rotation.z=Math.PI/6; scene.add(g); gates.push(g)}
+  /* floor shine strips */
+  var floor=new THREE.Mesh(new THREE.PlaneGeometry(60,L+40),new THREE.MeshBasicMaterial({color:0x0b0d11,fog:true})); floor.rotation.x=-Math.PI/2; floor.position.set(0,-1,-L/2); scene.add(floor);
+  var dust=new THREE.BufferGeometry(),dp=new Float32Array(900*3);
+  for(var i=0;i<900;i++){dp[i*3]=(rnd()-.5)*30;dp[i*3+1]=rnd()*5-0.8;dp[i*3+2]=-rnd()*L}
+  dust.setAttribute('position',new THREE.BufferAttribute(dp,3)); scene.add(new THREE.Points(dust,new THREE.PointsMaterial({color:0xcfd8e6,size:0.04,transparent:true,opacity:.6,fog:true})));
+  var tx=0,px=0,vis=true,t0=performance.now()/1000;
+  window.addEventListener('pointermove',function(e){tx=(e.clientX/innerWidth-0.5)*2});
+  function pose(t){
+    var span=L-40, p=(t*1.7+ (window.scrollY||0)*0.012)%(span*2); var travel=p<span?p:span*2-p;
+    var sway=Math.sin(t*0.21)*1.5, rise=Math.sin(t*0.13)*0.35, yaw=Math.sin(t*0.17)*0.12+px*0.18;
+    cam.position.set(sway,0.9+rise,-travel);
+    cam.lookAt(sway*0.6+Math.sin(yaw)*8, 2.4+rise*0.5+Math.sin(t*0.11)*0.4, -travel-9);
+    cam.rotation.z=Math.sin(t*0.19)*0.035;
+  }
+  function size(){var w=host.clientWidth||800,h=host.clientHeight||600;R.setSize(w,h,false);cam.aspect=w/h;cam.fov=w<700?72:60;cam.updateProjectionMatrix();draw(window.__vaultT!=null?window.__vaultT:0.001)}
+  function draw(t){pose(t);R.render(scene,cam)}
+  window.__vaultDraw=function(t){window.__vaultT=t;px=0;draw(t)};
+  window.addEventListener('resize',size); size();
+  function frame(){ px+=(tx-px)*0.05; if(window.__vaultT==null) draw(performance.now()/1000-t0+2);
+    if(!reduce&&vis&&!document.hidden&&window.__vaultT==null) requestAnimationFrame(frame); }
+  if('IntersectionObserver' in window){new IntersectionObserver(function(es){var was=vis;vis=es[0].isIntersecting;if(vis&&!was)requestAnimationFrame(frame)}).observe(host);}
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&vis)requestAnimationFrame(frame)});
+  requestAnimationFrame(frame);
+})();
+
+(function(){
+  var els=document.querySelectorAll('.rv');
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12});
+    els.forEach(function(el){io.observe(el)});
+  } else els.forEach(function(el){el.classList.add('in')});
+  
+  (function(){
+    /* Hours are from the shop's Google listing. Durations and barber days are placeholders until the owner confirms. */
+    var HOURS=[[10,19],[10,19],[10,19],[10,19],[10,19],[10,18],[11,17]]; /* Mon..Sun, from the shop's Google listing */
+    var SV=[['Haircut',0,40],['Fade',0,45],['Haircut and beard',0,60],["Kids' cut",0,30]];
+    var TEAM=['Malik'];
+    var FULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    var $=function(i){return document.getElementById(i)}, now=new Date();
+    var st={s:0,b:0,date:null,t:null}, view=new Date(now.getFullYear(),now.getMonth(),1);
+    function t12(h){var tot=Math.round(h*60),hh=Math.floor(tot/60),m=tot%60;return ((hh+11)%12+1)+':'+String(m).padStart(2,'0')+' '+(hh>=12?'pm':'am')}
+    function dow(d){return (d.getDay()+6)%7}
+    function sameDay(a,b){return a&&b&&a.toDateString()===b.toDateString()}
+    function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+    function chip(l,on,at){return '<button type="button" class="chip" aria-pressed="'+on+'" '+at+'>'+l+'</button>'}
+    var hash=function(a,b,c){return ((a*31+b*17+c*13+7)*2654435761>>>0)%10};
+    function drawChips(){
+      $('cSvc').innerHTML=SV.map(function(s,i){return chip(s[0]+'<small>about '+s[2]+' min</small>',st.s===i,'data-k="s" data-v="'+i+'"')}).join('');
+      $('cBar').innerHTML=['No preference'].concat(TEAM).map(function(n,i){return chip(n,st.b===i,'data-k="b" data-v="'+i+'"')}).join('');
+    }
+    function drawCal(){
+      var y=view.getFullYear(),m=view.getMonth(),first=new Date(y,m,1),lead=dow(first),days=new Date(y,m+1,0).getDate();
+      var today=new Date(now.getFullYear(),now.getMonth(),now.getDate()), max=new Date(today.getTime()+60*864e5);
+      var h='<div class="calh"><button type="button" id="calPrev" aria-label="Previous month"'+(new Date(y,m,0)<today?' disabled':'')+'>‹</button><span>'+first.toLocaleDateString('en-CA',{month:'long',year:'numeric'})+'</span><button type="button" id="calNext" aria-label="Next month"'+(new Date(y,m+1,1)>max?' disabled':'')+'>›</button></div><div class="calg">';
+      ['M','T','W','T','F','S','S'].forEach(function(x){h+='<b aria-hidden="true">'+x+'</b>'});
+      for(var k=0;k<lead;k++)h+='<span></span>';
+      for(var d=1;d<=days;d++){var dt=new Date(y,m,d),off=dt<today||dt>max||!HOURS[dow(dt)];
+        h+='<button type="button" data-d="'+iso(dt)+'" aria-label="'+dt.toLocaleDateString('en-CA',{weekday:'long',month:'long',day:'numeric'})+'" aria-pressed="'+sameDay(dt,st.date)+'" class="'+(sameDay(dt,today)?'today':'')+'"'+(off?' disabled':'')+'>'+d+'</button>'}
+      $('calPop').innerHTML=h+'</div>';
+    }
+    function drawSlots(){ if(st.t!=null&&check(st.t))st.t=null; }
+    var clk={hh:10,mm:0,ap:'am',mode:'h'}, CX=120, CY=120;
+    function to24(){return (clk.hh%12)+(clk.ap==='pm'?12:0)+clk.mm/60}
+    function check(t){
+      if(!st.date)return 'Choose a date first.';
+      var dw=dow(st.date),H=HOURS[dw]; if(!H)return 'We are closed on '+FULL[dw]+'.';
+      var dur=SV[st.s][2]/60;
+      if(t<H[0]-1e-6||t+dur>H[1]+1e-6)return 'Open '+t12(H[0])+' to '+t12(H[1])+'. Last start for a '+SV[st.s][0].toLowerCase()+' is '+t12(H[1]-dur)+'.';
+      if(sameDay(st.date,now)&&t<=now.getHours()+now.getMinutes()/60+.25)return 'That time has passed. Pick a later time today.';
+      return '';
+    }
+    function pos(r,deg){var a=deg*Math.PI/180;return [CX+r*Math.sin(a),CY-r*Math.cos(a)]}
+    function drawClock(){
+      var ui=$('clockUI'); if(!st.date){ui.innerHTML='<p class="cmsg">Choose a date first.</p>';return}
+      var H=HOURS[dow(st.date)];
+      if(!H){ui.innerHTML='<p class="cmsg">We are closed on '+FULL[dow(st.date)]+'. Pick another date.</p>';return}
+      if(st.t!=null){var tot=Math.round(st.t*60),h=Math.floor(tot/60);clk.hh=(h+11)%12+1;clk.mm=tot%60;clk.ap=h>=12?'pm':'am'}
+      else{var o=H[0];clk.hh=(Math.floor(o)+11)%12+1;clk.mm=Math.round((o%1)*60);clk.ap=o>=12?'pm':'am'}
+      clk.mode='h';
+      var f='<div class="ch"><input id="cH" inputmode="numeric" maxlength="2" aria-label="Hour" autocomplete="off"><span class="sep">:</span><input id="cM" inputmode="numeric" maxlength="2" aria-label="Minutes" autocomplete="off"><div class="ap"><button type="button" data-ap="am">AM</button><button type="button" data-ap="pm">PM</button></div></div>';
+      f+='<svg class="face" id="face" viewBox="0 0 240 240" role="img" aria-label="Clock face. Pick the hour, then the minutes."><circle cx="120" cy="120" r="116" fill="#12161c" stroke="rgba(238,241,244,.16)"/><g id="faceNums"></g><line class="hand" id="hand" x1="120" y1="120" x2="120" y2="40"/><circle class="knob" id="knob" r="17" cx="120" cy="40"/><circle class="knob" cx="120" cy="120" r="3.5"/></svg>';
+      f+='<p class="cmsg" id="cMsg" aria-live="polite">Open '+t12(H[0])+' to '+t12(H[1])+'. Tap the hour, then the minutes, or type them.</p><div class="cfoot"><button type="button" class="btn" id="cSet">Set time</button></div>';
+      ui.innerHTML=f; faceNums(); clockUpdate();
+    }
+    function faceNums(){
+      var g='',m=clk.mode==='m';
+      if(m){for(var k=0;k<60;k++){if(k%5){var p=pos(100,k*6);g+='<circle class="tick" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="1.6"/>'}}}
+      for(var i=0;i<12;i++){var v=m?i*5:(i===0?12:i),p2=pos(86,i*30),sel=m?(clk.mm===v):(clk.hh===v);
+        g+='<text id="n'+i+'" x="'+p2[0].toFixed(1)+'" y="'+(p2[1]+5).toFixed(1)+'" text-anchor="middle" class="'+(sel?'sel':'')+'">'+(m?String(v).padStart(2,'0'):v)+'</text>'}
+      $('faceNums').innerHTML=g;
+    }
+    function clockUpdate(){
+      var m=clk.mode==='m',deg=m?clk.mm*6:(clk.hh%12)*30,e=pos(m?100:86,deg);
+      var hd=$('hand'),kb=$('knob'); hd.setAttribute('x2',e[0]);hd.setAttribute('y2',e[1]);kb.setAttribute('cx',e[0]);kb.setAttribute('cy',e[1]);
+      var onMark=m?clk.mm%5===0:true; kb.setAttribute('r',onMark?17:6);
+      $('cH').value=clk.hh;$('cM').value=String(clk.mm).padStart(2,'0');
+      $('cH').className=m?'':'on';$('cM').className=m?'on':'';
+      document.querySelectorAll('.ap [data-ap]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.ap===clk.ap)});
+      var nums=document.querySelectorAll('#faceNums text');
+      for(var i=0;i<nums.length;i++){var v=m?i*5:(i===0?12:i);nums[i].setAttribute('class',(m?clk.mm===v:clk.hh===v)?'sel':'')}
+    }
+    function clockPoint(ev){
+      var r=$('face').getBoundingClientRect(),dx=(ev.clientX-r.left)/r.width*240-CX,dy=(ev.clientY-r.top)/r.height*240-CY;
+      var deg=Math.atan2(dx,-dy)*180/Math.PI; if(deg<0)deg+=360;
+      if(clk.mode==='h'){var h=Math.round(deg/30)%12;clk.hh=h===0?12:h}else{clk.mm=Math.round(deg/6)%60}
+      clockUpdate();
+    }
+    function setMode(md){if(clk.mode===md)return;clk.mode=md;faceNums();clockUpdate()}
+    var dragging=false;
+    document.addEventListener('pointerdown',function(ev){var f=ev.target.closest&&ev.target.closest('#face');if(!f)return;dragging=true;try{f.setPointerCapture(ev.pointerId)}catch(x){}clockPoint(ev);ev.preventDefault()});
+    document.addEventListener('pointermove',function(ev){if(dragging)clockPoint(ev)});
+    document.addEventListener('pointerup',function(){if(!dragging)return;dragging=false;if(clk.mode==='h')setMode('m')});
+    document.addEventListener('focusin',function(ev){if(ev.target.id==='cH')setMode('h');if(ev.target.id==='cM')setMode('m')});
+    document.addEventListener('input',function(ev){
+      var t=ev.target;if(t.id!=='cH'&&t.id!=='cM')return;var v=t.value.replace(/\D/g,'').slice(0,2);t.value=v;if(v==='')return;var n=+v;
+      if(t.id==='cH'){if(n>=1&&n<=12){clk.hh=n;if(v.length===2||n>1){}}}else{if(n>=0&&n<=59)clk.mm=n}
+      var m=clk.mode==='m',deg=m?clk.mm*6:(clk.hh%12)*30,e=pos(m?100:86,deg);
+      $('hand').setAttribute('x2',e[0]);$('hand').setAttribute('y2',e[1]);$('knob').setAttribute('cx',e[0]);$('knob').setAttribute('cy',e[1]);
+    });
+    document.addEventListener('change',function(ev){if(ev.target.id==='cH'||ev.target.id==='cM')clockUpdate()});
+    document.addEventListener('keydown',function(ev){
+      var t=ev.target;if((t.id==='cH'||t.id==='cM')&&(ev.key==='ArrowUp'||ev.key==='ArrowDown')){ev.preventDefault();var d=ev.key==='ArrowUp'?1:-1;
+        if(t.id==='cH')clk.hh=((clk.hh-1+d+12)%12)+1;else clk.mm=(clk.mm+d+60)%60;clockUpdate()}
+      if((t.id==='cH'||t.id==='cM')&&ev.key==='Enter'){ev.preventDefault();$('cSet').click()}
+    });
+    function summary(){
+      var ok=st.date&&st.t!=null, s=SV[st.s], who=st.b?TEAM[st.b-1]:'the first free barber';
+      $('dateTxt').textContent=st.date?st.date.toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric'}):'Choose a date';
+      $('timeTxt').textContent=st.t!=null?t12(st.t):'Choose a time';
+      $('sum').innerHTML=ok?'<b>'+s[0]+'</b> with '+who+', '+st.date.toLocaleDateString('en-CA',{weekday:'long',month:'long',day:'numeric'})+' at '+t12(st.t)+'. '+'About '+s[2]+' min.':'Pick a date and time to see your booking.';
+      $('who').hidden=!ok; $('req').disabled=!ok; $('req').textContent='Request this time';
+    }
+    function closeP(){['calPop','timePop'].forEach(function(i){$(i).hidden=true});$('dateBtn').setAttribute('aria-expanded','false');$('timeBtn').setAttribute('aria-expanded','false')}
+    function openP(which){var p=$(which+'Pop'),was=!p.hidden;closeP();if(was)return;if(which==='cal')drawCal();else drawClock();p.hidden=false;(which==='cal'?$('dateBtn'):$('timeBtn')).setAttribute('aria-expanded','true');
+      var f=p.querySelector('[aria-pressed="true"]:not(:disabled)')||p.querySelector('button:not(:disabled)');if(f)f.focus()}
+    $('dateBtn').addEventListener('click',function(){openP('cal')});
+    $('timeBtn').addEventListener('click',function(){openP('time')});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&(!$('calPop').hidden||!$('timePop').hidden)){var c=!$('calPop').hidden;closeP();(c?$('dateBtn'):$('timeBtn')).focus()}});
+    document.addEventListener('click',function(e){
+      if(!e.target.closest('.fld'))closeP();
+      var ap=e.target.closest('.ap [data-ap]');if(ap){clk.ap=ap.dataset.ap;clockUpdate();return}
+      if(e.target.closest('#cSet')){var cm=$('cMsg'),tt=to24(),bad=check(tt);if(bad){cm.textContent=bad;cm.className='cmsg bad';return}st.t=tt;closeP();summary();$('timeBtn').focus();return}
+      var c=e.target.closest('.chip[data-k]');
+      if(c&&!c.disabled){var k=c.dataset.k,v=+c.dataset.v;st[k]=v;drawChips();drawSlots();summary();return}
+      var a=e.target.closest('a[data-barber]');if(a){st.b=TEAM.indexOf(a.dataset.barber)+1;drawChips();drawSlots();summary();return}
+      var p=e.target.closest('#calPrev'),n=e.target.closest('#calNext');
+      if(p||n){view=new Date(view.getFullYear(),view.getMonth()+(n?1:-1),1);drawCal();var b=$(n?'calNext':'calPrev');if(b&&!b.disabled)b.focus();return}
+      var d=e.target.closest('#calPop [data-d]');
+      if(d&&!d.disabled){var q=d.dataset.d.split('-');st.date=new Date(+q[0],+q[1]-1,+q[2]);drawSlots();summary();closeP();$('dateBtn').focus();}
+    });
+    $('f').addEventListener('submit',async function(e){
+      e.preventDefault();var m=$('msg'),name=$('fName').value.trim(),ph=$('fPhone').value.trim(),dg=ph.replace(/\D/g,'');m.textContent='';
+      if(!name){m.textContent='Please add your name.';$('fName').focus();return}
+      if(dg.length<10||dg.length>15){m.textContent='Please add a mobile number the shop can reach you on.';$('fPhone').focus();return}
+      var cn=window.LeoConnect&&LeoConnect.shopId&&LeoConnect.shopId();
+      if(!cn){m.textContent='Sample only: nothing was sent. On the live site your name and number go straight to the shop’s booking list.';return}
+      var s=SV[st.s],mins=Math.round(st.t*60);$('req').disabled=true;$('req').textContent='Sending…';
+      var r=await LeoConnect.book({name:name,phone:ph,service:s[0],price:s[1],barber:st.b?TEAM[st.b-1]:'',date:iso(st.date),time:mins,end:mins+s[2],consent:$('fOk').checked});
+      if(r&&r.ok){m.textContent='Request sent. The shop will confirm by text.';$('req').textContent='Sent'}else{m.textContent='Could not send. Please call the shop.';$('req').disabled=false;$('req').textContent='Request this time'}
+    });
+    drawChips();drawSlots();summary();
+  })();
+})();
+</script>
