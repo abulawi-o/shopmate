@@ -164,6 +164,25 @@ footer{border-top:1px solid var(--line);padding:34px 0 48px;margin-top:40px;disp
 .chk{display:flex;gap:10px;align-items:flex-start;text-transform:none;letter-spacing:0;font:400 14px var(--sans);color:var(--cream2)}
 .chk input{min-height:0;margin-top:3px;accent-color:var(--brick)}
 #req:disabled{opacity:.45;cursor:not-allowed}
+.pop.clock{width:292px;max-width:92vw;left:auto;right:0}
+@media(max-width:520px){.pop.clock{left:0;right:auto}}
+.ch{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:10px}
+.ch input{width:64px;height:56px;text-align:center;font:600 34px var(--serif);background:#14211f;color:var(--cream);border:1px solid var(--line);padding:0;min-height:0}
+.ch input.on{border-color:var(--brick);background:#1b2c29}
+.ch .sep{font:600 34px var(--serif)}
+.ch .ap{display:grid;gap:4px;margin-left:8px}
+.ch .ap button{width:48px;height:26px;border:1px solid var(--line);background:transparent;color:var(--cream);font:700 12px var(--sans);letter-spacing:.1em;cursor:pointer}
+.ch .ap button[aria-pressed="true"]{background:var(--cream);color:var(--ink);border-color:var(--cream)}
+.face{display:block;width:100%;height:auto;touch-action:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+.face text{font:500 15px var(--sans);fill:var(--cream);pointer-events:none}
+.face text.sel{fill:var(--ink);font-weight:700}
+.face .hand{stroke:var(--brick);stroke-width:2}
+.face .knob{fill:var(--brick)}
+.face .tick{fill:var(--cream2);opacity:.5}
+.cmsg{min-height:2.6em;margin:8px 0 6px;font-size:13px;color:var(--cream2);line-height:1.4}
+.cmsg.bad{color:#f0a08c}
+.cfoot{display:flex;gap:8px}
+.cfoot .btn{flex:1;min-height:44px}
 @media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}.tick div{animation:none}html{scroll-behavior:auto}}
 :focus-visible{outline:3px solid var(--brick);outline-offset:3px}
 </style>
@@ -240,7 +259,7 @@ footer{border-top:1px solid var(--line);padding:34px 0 48px;margin-top:40px;disp
             <div class="pop" id="calPop" role="dialog" aria-label="Choose a date" hidden></div></div>
           <div class="fld"><span class="lab" id="tLab">Time</span>
             <button type="button" class="dd" id="timeBtn" aria-haspopup="dialog" aria-expanded="false" aria-labelledby="tLab timeTxt"><span id="timeTxt">Choose a time</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></button>
-            <div class="pop" id="timePop" role="dialog" aria-label="Choose a time" hidden><div class="slots" id="cSlot"></div></div></div>
+            <div class="pop clock" id="timePop" role="dialog" aria-label="Choose a time" hidden><div id="clockUI"></div></div></div>
         </div>
         <p class="sum" id="sum" aria-live="polite">Pick a date and time to see your booking.</p>
         <div id="who" hidden class="who">
@@ -349,7 +368,7 @@ footer{border-top:1px solid var(--line);padding:34px 0 48px;margin-top:40px;disp
     var FULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
     var $=function(i){return document.getElementById(i)}, now=new Date();
     var st={s:0,b:0,date:null,t:null}, view=new Date(now.getFullYear(),now.getMonth(),1);
-    function t12(h){var hh=Math.floor(h),m=h%1?'30':'00';return ((hh+11)%12+1)+':'+m+' '+(hh>=12?'pm':'am')}
+    function t12(h){var tot=Math.round(h*60),hh=Math.floor(tot/60),m=tot%60;return ((hh+11)%12+1)+':'+String(m).padStart(2,'0')+' '+(hh>=12?'pm':'am')}
     function dow(d){return (d.getDay()+6)%7}
     function sameDay(a,b){return a&&b&&a.toDateString()===b.toDateString()}
     function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
@@ -369,20 +388,71 @@ footer{border-top:1px solid var(--line);padding:34px 0 48px;margin-top:40px;disp
         h+='<button type="button" data-d="'+iso(dt)+'" aria-label="'+dt.toLocaleDateString('en-CA',{weekday:'long',month:'long',day:'numeric'})+'" aria-pressed="'+sameDay(dt,st.date)+'" class="'+(sameDay(dt,today)?'today':'')+'"'+(off?' disabled':'')+'>'+d+'</button>'}
       $('calPop').innerHTML=h+'</div>';
     }
-    function drawSlots(){
-      var h='';
-      if(!st.date){h='<p class="none">Choose a date first.</p>'}
-      else{
-        var dw=dow(st.date),H=HOURS[dw],dur=SV[st.s][2]/60,isToday=sameDay(st.date,now),nowH=now.getHours()+now.getMinutes()/60;
-        if(!H)h='<p class="none">Closed on '+FULL[dw]+'.</p>';
-        else{var any=false;
-          for(var t=H[0];t<=H[1]-dur+1e-6;t+=.5){var past=isToday&&t<=nowH+.5,taken=hash(+st.date.getDate(),st.b,t*2)<2;
-            if(!past&&!taken)any=true;
-            h+=chip(t12(t),st.t===t,'data-k="t" data-v="'+t+'"'+(past||taken?' disabled':''))}
-          if(!any)h='<p class="none">No times left that day. Try another date.</p>'}
-      }
-      $('cSlot').innerHTML=h;
+    function drawSlots(){ if(st.t!=null&&check(st.t))st.t=null; }
+    var clk={hh:10,mm:0,ap:'am',mode:'h'}, CX=120, CY=120;
+    function to24(){return (clk.hh%12)+(clk.ap==='pm'?12:0)+clk.mm/60}
+    function check(t){
+      if(!st.date)return 'Choose a date first.';
+      var dw=dow(st.date),H=HOURS[dw]; if(!H)return 'We are closed on '+FULL[dw]+'.';
+      var dur=SV[st.s][2]/60;
+      if(t<H[0]-1e-6||t+dur>H[1]+1e-6)return 'Open '+t12(H[0])+' to '+t12(H[1])+'. Last start for a '+SV[st.s][0].toLowerCase()+' is '+t12(H[1]-dur)+'.';
+      if(sameDay(st.date,now)&&t<=now.getHours()+now.getMinutes()/60+.25)return 'That time has passed. Pick a later time today.';
+      return '';
     }
+    function pos(r,deg){var a=deg*Math.PI/180;return [CX+r*Math.sin(a),CY-r*Math.cos(a)]}
+    function drawClock(){
+      var ui=$('clockUI'); if(!st.date){ui.innerHTML='<p class="cmsg">Choose a date first.</p>';return}
+      var H=HOURS[dow(st.date)];
+      if(!H){ui.innerHTML='<p class="cmsg">We are closed on '+FULL[dow(st.date)]+'. Pick another date.</p>';return}
+      if(st.t!=null){var tot=Math.round(st.t*60),h=Math.floor(tot/60);clk.hh=(h+11)%12+1;clk.mm=tot%60;clk.ap=h>=12?'pm':'am'}
+      else{var o=H[0];clk.hh=(Math.floor(o)+11)%12+1;clk.mm=Math.round((o%1)*60);clk.ap=o>=12?'pm':'am'}
+      clk.mode='h';
+      var f='<div class="ch"><input id="cH" inputmode="numeric" maxlength="2" aria-label="Hour" autocomplete="off"><span class="sep">:</span><input id="cM" inputmode="numeric" maxlength="2" aria-label="Minutes" autocomplete="off"><div class="ap"><button type="button" data-ap="am">AM</button><button type="button" data-ap="pm">PM</button></div></div>';
+      f+='<svg class="face" id="face" viewBox="0 0 240 240" role="img" aria-label="Clock face. Pick the hour, then the minutes."><circle cx="120" cy="120" r="116" fill="#14211f" stroke="rgba(239,230,214,.16)"/><g id="faceNums"></g><line class="hand" id="hand" x1="120" y1="120" x2="120" y2="40"/><circle class="knob" id="knob" r="17" cx="120" cy="40"/><circle class="knob" cx="120" cy="120" r="3.5"/></svg>';
+      f+='<p class="cmsg" id="cMsg" aria-live="polite">Open '+t12(H[0])+' to '+t12(H[1])+'. Tap the hour, then the minutes, or type them.</p><div class="cfoot"><button type="button" class="btn" id="cSet">Set time</button></div>';
+      ui.innerHTML=f; faceNums(); clockUpdate();
+    }
+    function faceNums(){
+      var g='',m=clk.mode==='m';
+      if(m){for(var k=0;k<60;k++){if(k%5){var p=pos(100,k*6);g+='<circle class="tick" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="1.6"/>'}}}
+      for(var i=0;i<12;i++){var v=m?i*5:(i===0?12:i),p2=pos(86,i*30),sel=m?(clk.mm===v):(clk.hh===v);
+        g+='<text id="n'+i+'" x="'+p2[0].toFixed(1)+'" y="'+(p2[1]+5).toFixed(1)+'" text-anchor="middle" class="'+(sel?'sel':'')+'">'+(m?String(v).padStart(2,'0'):v)+'</text>'}
+      $('faceNums').innerHTML=g;
+    }
+    function clockUpdate(){
+      var m=clk.mode==='m',deg=m?clk.mm*6:(clk.hh%12)*30,e=pos(m?100:86,deg);
+      var hd=$('hand'),kb=$('knob'); hd.setAttribute('x2',e[0]);hd.setAttribute('y2',e[1]);kb.setAttribute('cx',e[0]);kb.setAttribute('cy',e[1]);
+      var onMark=m?clk.mm%5===0:true; kb.setAttribute('r',onMark?17:6);
+      $('cH').value=clk.hh;$('cM').value=String(clk.mm).padStart(2,'0');
+      $('cH').className=m?'':'on';$('cM').className=m?'on':'';
+      document.querySelectorAll('.ap [data-ap]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.ap===clk.ap)});
+      var nums=document.querySelectorAll('#faceNums text');
+      for(var i=0;i<nums.length;i++){var v=m?i*5:(i===0?12:i);nums[i].setAttribute('class',(m?clk.mm===v:clk.hh===v)?'sel':'')}
+    }
+    function clockPoint(ev){
+      var r=$('face').getBoundingClientRect(),dx=(ev.clientX-r.left)/r.width*240-CX,dy=(ev.clientY-r.top)/r.height*240-CY;
+      var deg=Math.atan2(dx,-dy)*180/Math.PI; if(deg<0)deg+=360;
+      if(clk.mode==='h'){var h=Math.round(deg/30)%12;clk.hh=h===0?12:h}else{clk.mm=Math.round(deg/6)%60}
+      clockUpdate();
+    }
+    function setMode(md){if(clk.mode===md)return;clk.mode=md;faceNums();clockUpdate()}
+    var dragging=false;
+    document.addEventListener('pointerdown',function(ev){var f=ev.target.closest&&ev.target.closest('#face');if(!f)return;dragging=true;try{f.setPointerCapture(ev.pointerId)}catch(x){}clockPoint(ev);ev.preventDefault()});
+    document.addEventListener('pointermove',function(ev){if(dragging)clockPoint(ev)});
+    document.addEventListener('pointerup',function(){if(!dragging)return;dragging=false;if(clk.mode==='h')setMode('m')});
+    document.addEventListener('focusin',function(ev){if(ev.target.id==='cH')setMode('h');if(ev.target.id==='cM')setMode('m')});
+    document.addEventListener('input',function(ev){
+      var t=ev.target;if(t.id!=='cH'&&t.id!=='cM')return;var v=t.value.replace(/\D/g,'').slice(0,2);t.value=v;if(v==='')return;var n=+v;
+      if(t.id==='cH'){if(n>=1&&n<=12){clk.hh=n;if(v.length===2||n>1){}}}else{if(n>=0&&n<=59)clk.mm=n}
+      var m=clk.mode==='m',deg=m?clk.mm*6:(clk.hh%12)*30,e=pos(m?100:86,deg);
+      $('hand').setAttribute('x2',e[0]);$('hand').setAttribute('y2',e[1]);$('knob').setAttribute('cx',e[0]);$('knob').setAttribute('cy',e[1]);
+    });
+    document.addEventListener('change',function(ev){if(ev.target.id==='cH'||ev.target.id==='cM')clockUpdate()});
+    document.addEventListener('keydown',function(ev){
+      var t=ev.target;if((t.id==='cH'||t.id==='cM')&&(ev.key==='ArrowUp'||ev.key==='ArrowDown')){ev.preventDefault();var d=ev.key==='ArrowUp'?1:-1;
+        if(t.id==='cH')clk.hh=((clk.hh-1+d+12)%12)+1;else clk.mm=(clk.mm+d+60)%60;clockUpdate()}
+      if((t.id==='cH'||t.id==='cM')&&ev.key==='Enter'){ev.preventDefault();$('cSet').click()}
+    });
     function summary(){
       var ok=st.date&&st.t!=null, s=SV[st.s], who=st.b?TEAM[st.b-1]:'the first free barber';
       $('dateTxt').textContent=st.date?st.date.toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric'}):'Choose a date';
@@ -391,20 +461,22 @@ footer{border-top:1px solid var(--line);padding:34px 0 48px;margin-top:40px;disp
       $('who').hidden=!ok; $('req').disabled=!ok; $('req').textContent='Request this time';
     }
     function closeP(){['calPop','timePop'].forEach(function(i){$(i).hidden=true});$('dateBtn').setAttribute('aria-expanded','false');$('timeBtn').setAttribute('aria-expanded','false')}
-    function openP(which){var p=$(which+'Pop'),was=!p.hidden;closeP();if(was)return;if(which==='cal')drawCal();else drawSlots();p.hidden=false;(which==='cal'?$('dateBtn'):$('timeBtn')).setAttribute('aria-expanded','true');
+    function openP(which){var p=$(which+'Pop'),was=!p.hidden;closeP();if(was)return;if(which==='cal')drawCal();else drawClock();p.hidden=false;(which==='cal'?$('dateBtn'):$('timeBtn')).setAttribute('aria-expanded','true');
       var f=p.querySelector('[aria-pressed="true"]:not(:disabled)')||p.querySelector('button:not(:disabled)');if(f)f.focus()}
     $('dateBtn').addEventListener('click',function(){openP('cal')});
     $('timeBtn').addEventListener('click',function(){openP('time')});
     document.addEventListener('keydown',function(e){if(e.key==='Escape'&&(!$('calPop').hidden||!$('timePop').hidden)){var c=!$('calPop').hidden;closeP();(c?$('dateBtn'):$('timeBtn')).focus()}});
     document.addEventListener('click',function(e){
       if(!e.target.closest('.fld'))closeP();
+      var ap=e.target.closest('.ap [data-ap]');if(ap){clk.ap=ap.dataset.ap;clockUpdate();return}
+      if(e.target.closest('#cSet')){var cm=$('cMsg'),tt=to24(),bad=check(tt);if(bad){cm.textContent=bad;cm.className='cmsg bad';return}st.t=tt;closeP();summary();$('timeBtn').focus();return}
       var c=e.target.closest('.chip[data-k]');
-      if(c&&!c.disabled){var k=c.dataset.k,v=+c.dataset.v;st[k]=v;if(k!=='t'){st.t=null}drawChips();drawSlots();summary();if(k==='t')closeP();return}
-      var a=e.target.closest('a[data-barber]');if(a){st.b=TEAM.indexOf(a.dataset.barber)+1;st.t=null;drawChips();drawSlots();summary();return}
+      if(c&&!c.disabled){var k=c.dataset.k,v=+c.dataset.v;st[k]=v;drawChips();drawSlots();summary();return}
+      var a=e.target.closest('a[data-barber]');if(a){st.b=TEAM.indexOf(a.dataset.barber)+1;drawChips();drawSlots();summary();return}
       var p=e.target.closest('#calPrev'),n=e.target.closest('#calNext');
       if(p||n){view=new Date(view.getFullYear(),view.getMonth()+(n?1:-1),1);drawCal();var b=$(n?'calNext':'calPrev');if(b&&!b.disabled)b.focus();return}
       var d=e.target.closest('#calPop [data-d]');
-      if(d&&!d.disabled){var q=d.dataset.d.split('-');st.date=new Date(+q[0],+q[1]-1,+q[2]);st.t=null;drawSlots();summary();closeP();$('dateBtn').focus();}
+      if(d&&!d.disabled){var q=d.dataset.d.split('-');st.date=new Date(+q[0],+q[1]-1,+q[2]);drawSlots();summary();closeP();$('dateBtn').focus();}
     });
     $('f').addEventListener('submit',async function(e){
       e.preventDefault();var m=$('msg'),name=$('fName').value.trim(),ph=$('fPhone').value.trim(),dg=ph.replace(/\D/g,'');m.textContent='';
