@@ -407,8 +407,8 @@ footer .big{font-size:clamp(46px,12.5vw,170px)}
 <script>
 /* ---------- content ---------- */
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],FULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-const HOURS=[null,[10,19],[10,19],[10,19],[10,19],[9,17],[11,16]]; /* Monday closed */
-const TEAM=[['Kevin','Owner and barber',[0,1,1,1,1,1,1]]];
+const HOURS=[[10,19],[10,19],[10,19],[10,19],[10,19],[9,17],[11,16]]; /* Google hours */
+const TEAM=[['Kevin','Owner and barber',[1,1,1,1,1,1,1]]];
 const SV=[['Men’s haircut and style','Wash and style',30,30,0],['Zero fade','Clean skin fade',30,30,0],['Taper','Classic taper',30,30,0],['Kids haircut','Patient hands, quick work',20,30,0],['Hot towel shave','Straight razor, steamed towels',25,30,1],['Full head shave','Razor smooth',30,30,1],['Beard trim and outline','Shaped to your face',20,20,1]];
 const $=id=>document.getElementById(id);
 const t12=h=>{const hh=Math.floor(h),m=h%1?'30':'00';return ((hh+11)%12+1)+':'+m+' '+(hh>=12?'pm':'am')};
