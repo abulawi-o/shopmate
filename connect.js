@@ -34,6 +34,6 @@
     try { const { error } = await client().from('bookings').insert(row); return error ? { ok: false, error: error.message } : { ok: true }; }
     catch (e) { return { ok: false, error: 'network' }; }
   }
-  const ownerUrl = () => (base ? new URL('owner.html', base).href.replace('/sites/', '/').replace(/\/[^/]+\/owner\.html$/, '/owner.html') : 'owner.html');
+  const ownerUrl = () => (cfg().ownerUrl || (base ? new URL('owner.html', base).href : 'owner.html'));
   root.LeoConnect = { load, book, ownerUrl, info: () => state.info, shopId: () => state.shop, bookingOpen: () => !!(state.info && state.info.booking) };
 })(window);
