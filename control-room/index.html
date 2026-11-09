@@ -1,5 +1,6 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Control Room</title><meta name="robots" content="noindex,nofollow">
+<!doctype html><html><head>
+<meta name="robots" content="noindex,nofollow"><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Control Room</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -435,7 +436,7 @@ function renderDirect(){
   $('#d-status').textContent=statusText(d.id);
   $('#d-task').textContent=d.task;
   var bar=$('#d-bar'); bar.style.width=d.progress+'%'; bar.style.background=d.css;
-  $('#d-pct').textContent=d.progress+'% (sample progress)';
+  $('#d-pct').textContent=d.real?(d.progress+'% · real work log'+(d.when?' · '+d.when:'')):(d.progress+'% (sample progress)');
   renderTasks();
   var sk=$('#d-skills'); sk.replaceChildren.apply(sk,(d.skills||[]).map(function(n){var c=document.createElement('span'); c.className='chip2'+(/not connected/.test(n)?' off':''); c.textContent=n; return c;}));
   var muted=!!state.muted[d.id];
@@ -1020,8 +1021,9 @@ function init3D(){
     function loadWeather(){fetch('https://api.open-meteo.com/v1/forecast?latitude='+MLAT+'&longitude='+MLON+'&current=temperature_2m,wind_speed_10m').then(function(r){return r.json();}).then(function(j){LIVE.weather=j.current; paintScreens();}).catch(function(){});}
     function checkSite(){var t0=performance.now(); fetch('https://abulawi-o.github.io/shopmate/?ping='+Date.now(),{mode:'no-cors',cache:'no-store'}).then(function(){LIVE.site={ok:true,ms:Math.round(performance.now()-t0)}; paintScreens();}).catch(function(){LIVE.site={ok:false}; paintScreens();});}
     function loadPipe(){fetch('pipeline.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){LIVE.pipe=j; paintScreens();}).catch(function(){LIVE.pipe={prospects:[]}; paintScreens();});}
-    loadWeather(); checkSite(); loadPipe();
-    setInterval(function(){loadWeather(); checkSite(); loadPipe();},300000);
+    function loadAct(){fetch('activity.json?'+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){(j.agents||[]).forEach(function(x){var a=byId[x.id]; if(!a)return; a.task=x.task; a.status=x.status; a.progress=x.progress; a.real=true; a.when=x.when||'';}); if(state.view==='direct'&&state.sel) renderDirect();}).catch(function(){});}
+    loadWeather(); checkSite(); loadPipe(); loadAct();
+    setInterval(function(){loadWeather(); checkSite(); loadPipe(); loadAct();},300000);
     setInterval(paintScreens,20000);
     var scr=new THREE.Mesh(new THREE.CylinderGeometry(wallR,wallR,H,64,1,true,Math.PI-arc/2,arc),new THREE.MeshBasicMaterial({map:tex,side:THREE.BackSide,fog:false}));
     scr.position.y=7.2; scene.add(scr); wallMat=scr.material;
@@ -1294,6 +1296,7 @@ function init3D(){
   function ambient(){
     var cands=AG.filter(function(a){var r=run[a.id]; return r.state==='work'&&!r.locked&&!state.muted[a.id];});
     if(!cands.length) return; var a=cands[Math.floor(Math.random()*cands.length)]; var lines=EV[a.id]||[]; var ln=lines[Math.floor(Math.random()*lines.length)]; if(!ln) return;
+    if(a.real){var rl=a.task.length>90?a.task.slice(0,87)+'...':a.task; speak(a.id,rl,3200); setActivity(a.name+': '+rl,a.css); sendPacket(a.id,a.hex); return;}
     speak(a.id,ln,2600); setActivity(a.name+': '+ln,a.css); sendPacket(a.id,a.hex);
     if(a.progress>=96){a.progress=5; a.task='Next round: '+a.task.replace(/^Next round: /,'');} else a.progress=Math.min(97,a.progress+1+Math.floor(Math.random()*2));
     if(state.view==='direct'&&state.sel===a.id) renderDirect();
