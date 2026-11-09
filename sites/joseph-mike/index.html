@@ -5,11 +5,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=DM+Sans:wght@400;500;700&display=swap">
 <style>
-:root{--bg:#0c0b0a;--cream:#f1ebe1;--cream2:#a69d8f;--brick:#e0914f;--ink:#0c0b0a;--line:rgba(241,235,225,.16);--card:#15120f;--serif:'Bricolage Grotesque','Arial Black',sans-serif;--sans:'DM Sans',system-ui,-apple-system,Segoe UI,sans-serif;color-scheme:dark}
+:root{--bg:#090b0f;--cream:#eef3fb;--cream2:#98a3b5;--brick:#5aa9ff;--ink:#090b0f;--line:rgba(236,242,252,.16);--card:#10141b;--serif:'Bricolage Grotesque','Arial Black',sans-serif;--sans:'DM Sans',system-ui,-apple-system,Segoe UI,sans-serif;color-scheme:dark}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;overflow-x:clip;background:var(--bg);color:var(--cream);font:400 17px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
 a{color:inherit}
-header.top{position:fixed;inset:0 0 auto 0;z-index:30;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:calc(16px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) 16px max(20px,env(safe-area-inset-left,0px));background:linear-gradient(180deg,rgba(12,11,10,.9),rgba(12,11,10,0))}
+header.top{position:fixed;inset:0 0 auto 0;z-index:30;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:calc(16px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) 16px max(20px,env(safe-area-inset-left,0px));background:linear-gradient(180deg,rgba(9,11,15,.9),rgba(9,11,15,0))}
 header.top nav{display:flex;gap:26px}
 header.top nav a{font:500 13px var(--sans);letter-spacing:.16em;text-transform:uppercase;text-decoration:none;color:var(--cream2)}
 header.top nav a:hover{color:var(--cream)}
@@ -24,7 +24,7 @@ header.top nav a:hover{color:var(--cream)}
 .olink{text-underline-offset:4px;color:var(--cream2);font-size:14px}
 .hero{position:relative;min-height:100vh;min-height:100svh;display:grid;align-content:end;padding:120px clamp(20px,5vw,72px) 54px;overflow:hidden}
 #flow{position:absolute;inset:0;width:100%;height:100%;display:block}
-.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,11,10,.1) 0%,rgba(12,11,10,.2) 40%,rgba(12,11,10,.88) 100%);pointer-events:none}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,11,15,.1) 0%,rgba(9,11,15,.2) 40%,rgba(9,11,15,.88) 100%);pointer-events:none}
 .hero>*:not(canvas){position:relative;z-index:2}
 .names{font:800 clamp(80px,18vw,290px)/.78 var(--serif);letter-spacing:-.05em;margin:0;text-transform:uppercase}
 .names span{display:block}
@@ -37,7 +37,7 @@ header.top nav a:hover{color:var(--cream)}
 section{padding:110px clamp(20px,5vw,72px);max-width:1400px;margin:0 auto}
 .eyebrow{font:700 12px var(--sans);letter-spacing:.32em;text-transform:uppercase;color:var(--brick);margin:0 0 16px}
 h2.big{font:800 clamp(44px,7vw,110px)/.92 var(--serif);letter-spacing:-.04em;margin:0 0 48px;text-transform:uppercase}
-.boards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.boards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
 @media(max-width:1000px){.boards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.boards{grid-template-columns:1fr}}
 .tile{border:1px solid var(--line);background:var(--card);padding:28px;min-height:210px;display:flex;flex-direction:column;justify-content:space-between;transition:border-color .2s,transform .3s}
@@ -51,7 +51,7 @@ h2.big{font:800 clamp(44px,7vw,110px)/.92 var(--serif);letter-spacing:-.04em;mar
 .pan{position:relative;padding:34px;min-height:420px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;background:var(--card)}
 .pan+.pan{border-left:1px solid var(--line)}
 @media(max-width:760px){.pan+.pan{border-left:0;border-top:1px solid var(--line)}.pan{min-height:320px}}
-.pan .ini{position:absolute;top:-30px;left:14px;font:800 clamp(240px,30vw,420px)/1 var(--serif);color:rgba(224,145,79,.12);letter-spacing:-.06em;pointer-events:none}
+.pan .ini{position:absolute;top:-30px;left:14px;font:800 clamp(240px,30vw,420px)/1 var(--serif);color:rgba(90,169,255,.14);letter-spacing:-.06em;pointer-events:none}
 .pan h3{position:relative;margin:0 0 8px;font:800 clamp(48px,6vw,88px)/.9 var(--serif);letter-spacing:-.04em;text-transform:uppercase}
 .pan p{position:relative;margin:0 0 22px;color:var(--cream2);max-width:38ch}
 .pan .btn{position:relative;align-self:flex-start}
@@ -83,12 +83,12 @@ form{display:grid;gap:16px}
 label{display:grid;gap:7px;font:700 12px var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--cream2)}
 input,select{font:400 17px var(--sans);color:var(--cream);background:transparent;border:0;border-bottom:1px solid var(--cream2);padding:12px 2px;min-height:48px;border-radius:0}
 select option{color:#111}
-input::placeholder{color:#8c8374}
+input::placeholder{color:#7d8798}
 input:focus,select:focus{outline:none;border-bottom-color:var(--brick)}
 .msg{min-height:1.4em;color:var(--cream);font-weight:700}
 .tiny{font-size:13px;color:var(--cream2)}
 #socials{display:inline-flex;gap:8px;margin-right:16px;vertical-align:middle}
-#socials a,.socdemo .ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(241,235,225,.3);color:var(--cream);transition:border-color .2s,color .2s}
+#socials a,.socdemo .ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(236,242,252,.3);color:var(--cream);transition:border-color .2s,color .2s}
 #socials a:hover,#socials a:focus-visible{border-color:var(--brick);color:var(--brick)}
 #socials svg,.socdemo svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #socials svg .f,.socdemo svg .f{fill:currentColor;stroke:none}
@@ -112,7 +112,7 @@ input:focus,select:focus{outline:none;border-bottom-color:var(--brick)}
 .fld{position:relative;min-width:0}
 .dd{width:100%;min-height:50px;display:flex;justify-content:space-between;align-items:center;gap:10px;background:transparent;color:var(--cream);border:1px solid var(--cream2);padding:0 14px;font:500 16px var(--sans);cursor:pointer;text-align:left}
 .dd svg{width:20px;height:20px;flex:none;stroke:var(--cream);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.pop{position:absolute;z-index:30;top:calc(100% + 6px);left:0;min-width:100%;width:max-content;max-width:min(92vw,340px);background:#17130f;border:1px solid var(--cream2);padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+.pop{position:absolute;z-index:30;top:calc(100% + 6px);left:0;min-width:100%;width:max-content;max-width:min(92vw,340px);background:#0f131a;border:1px solid var(--cream2);padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.55)}
 .pop[hidden]{display:none}
 .calh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font:600 20px var(--serif)}
 .calh button{width:40px;height:40px;background:transparent;border:1px solid var(--line);color:var(--cream);font-size:18px;cursor:pointer}
@@ -136,8 +136,8 @@ input:focus,select:focus{outline:none;border-bottom-color:var(--brick)}
 .pop.clock{width:292px;max-width:92vw;left:auto;right:0}
 @media(max-width:520px){.pop.clock{left:0;right:auto}}
 .ch{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:10px}
-.ch input{width:64px;height:56px;text-align:center;font:600 34px var(--serif);background:#1c1712;color:var(--cream);border:1px solid var(--line);padding:0;min-height:0}
-.ch input.on{border-color:var(--brick);background:#33231a}
+.ch input{width:64px;height:56px;text-align:center;font:600 34px var(--serif);background:#121a26;color:var(--cream);border:1px solid var(--line);padding:0;min-height:0}
+.ch input.on{border-color:var(--brick);background:#16284a}
 .ch .sep{font:600 34px var(--serif)}
 .ch .ap{display:grid;gap:4px;margin-left:8px}
 .ch .ap button{width:48px;height:26px;border:1px solid var(--line);background:transparent;color:var(--cream);font:700 12px var(--sans);letter-spacing:.1em;cursor:pointer}
@@ -175,14 +175,12 @@ input:focus,select:focus{outline:none;border-bottom-color:var(--brick)}
   <p class="eyebrow">Services</p>
   <h2 class="big">The menu</h2>
   <div class="boards">
-    <div class="tile"><h3>Haircut</h3><div class="p"><sup>$</sup>35</div></div>
-    <div class="tile"><h3>Skin fade</h3><div class="p"><sup>$</sup>40</div></div>
+    <div class="tile"><h3>Men's haircut</h3><div class="p"><sup>$</sup>35</div></div>
     <div class="tile"><h3>Beard trim</h3><div class="p"><sup>$</sup>25</div></div>
-    <div class="tile"><h3>Haircut and beard</h3><div class="p"><sup>$</sup>55</div></div>
-    <div class="tile"><h3>Kid's haircut</h3><div class="p"><sup>$</sup>30</div></div>
-    <div class="tile"><h3>Line-up</h3><div class="p"><sup>$</sup>15</div></div>
+    <div class="tile"><h3>Head shave</h3><div class="p"><sup>$</sup>30</div></div>
+    <div class="tile"><h3>Hot towel shave</h3><div class="p"><sup>$</sup>35</div></div>
   </div>
-  <p class="note">Sample menu and prices. The shop sets its real services and prices before the site goes live.</p>
+  <p class="note">The four services are from the shop's Fresha page. Prices are samples: the shop sets its real prices before the site goes live.</p>
 </section>
 
 <section id="chairs" class="rv">
@@ -238,7 +236,7 @@ input:focus,select:focus{outline:none;border-bottom-color:var(--brick)}
     <div class="vbox"><h3>Call</h3><p class="num">(437) 535-8747</p></div>
   </div>
 </section>
-<footer><span translate="no">Joseph &amp; Mike Barbershop · Milton, Ontario</span><span><a class="olink" id="ownerFoot" href="../../owner.html">Owner login</a> &nbsp;·&nbsp; Website concept by Shopmate. Not the shop's live site.</span></footer>
+<footer><span translate="no">Joseph &amp; Mike's Barbershop · Milton, Ontario</span><span><a class="olink" id="ownerFoot" href="../../owner.html">Owner login</a> &nbsp;·&nbsp; Website concept by Shopmate. Not the shop's live site.</span></footer>
 <div class="banner">Concept preview</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="../../config.js"></script>
@@ -272,8 +270,8 @@ input:focus,select:focus{outline:none;border-bottom-color:var(--brick)}
   'void main(){vec2 u=gl_FragCoord.xy/R.y;float t=T*.12;vec2 p=u*1.6;'+
   'for(int i=0;i<4;i++){float k=float(i)+1.;p+=vec2(sin(p.y*1.7*k+t*k+1.3),cos(p.x*1.5*k-t*k*.8))*.42/k;}'+
   'float v=p.x*1.1+p.y*.9+sin(p.x*2.+t)*.35;float l=abs(fract(v*3.2)-.5);'+
-  'float line=smoothstep(.07,.0,l);float glow=smoothstep(.3,.0,l)*.22;'+
-  'vec3 bg=vec3(.047,.043,.039);vec3 cu=vec3(.88,.57,.31);'+
+  'float line=smoothstep(.05,.0,l);float glow=smoothstep(.3,.0,l)*.2;'+
+  'vec3 bg=vec3(.035,.043,.059);vec3 cu=vec3(.55,.76,1.);'+
   'float m=smoothstep(.0,1.,1.-u.y/ (R.y/R.y)*0.2)*.9+.1;'+
   'vec3 col=bg+cu*(line*.85+glow)*m;float vg=smoothstep(1.9,.2,length(gl_FragCoord.xy/R-.5)*2.);col*=.55+.45*vg;gl_FragColor=vec4(col,1.);}';
   var pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,vs));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pr);gl.useProgram(pr);
@@ -298,7 +296,7 @@ input:focus,select:focus{outline:none;border-bottom-color:var(--brick)}
   (function(){
     /* Placeholders until the owner confirms: hours, barber days and durations. */
     var HOURS=[null,[10,19],[10,19],[10,19],[10,19],[10,19],[10,19]]; /* Mon..Sun */
-    var SV=[['Haircut',35,30],['Skin fade',40,40],['Beard trim',25,20],['Haircut and beard',55,50],['Kid\'s haircut',30,30],['Line-up',15,15]];
+    var SV=[['Men\'s haircut',35,30],['Beard trim',25,20],['Head shave',30,30],['Hot towel shave',35,30]];
     var TEAM=['Joseph','Mike','Ahmad'];
     var FULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
     var $=function(i){return document.getElementById(i)}, now=new Date();
