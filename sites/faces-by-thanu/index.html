@@ -282,6 +282,22 @@ body{background:radial-gradient(1200px 700px at 85% 8%,rgba(120,50,80,.28),trans
 .op:disabled{opacity:.35}
 input[type=range]{accent-color:#d9b987}
 .vb h3,.vb p{color:var(--ink)}
+
+/* ---- GLASS MENU ---- */
+.dim{background:rgba(10,3,8,.5)!important;backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.drawer{top:14px;right:14px;bottom:14px;width:min(420px,calc(100vw - 28px));border-radius:30px;padding:26px 30px 26px;gap:0;overflow-y:auto;overscroll-behavior:contain;
+ background:linear-gradient(160deg,rgba(92,38,70,.5),rgba(34,12,28,.58))!important;backdrop-filter:blur(28px) saturate(1.5);-webkit-backdrop-filter:blur(28px) saturate(1.5);
+ border:1px solid rgba(236,200,149,.28);box-shadow:0 40px 90px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.14)}
+.drawer .hd{margin-bottom:10px}
+.drawer a.big{font-size:clamp(26px,4vw,31px);line-height:1.1;padding:9px 0;border-bottom:1px solid rgba(236,200,149,.16);display:flex;justify-content:space-between;align-items:center;transition:color .2s,padding-left .25s}
+.drawer a.big::after{content:"\2192";font:400 18px var(--body);color:var(--champ2);opacity:0;transform:translateX(-8px);transition:.25s}
+.drawer a.big:hover{padding-left:8px}.drawer a.big:hover::after{opacity:1;transform:none}
+.dfoot{margin-top:auto;padding-top:16px;display:grid;gap:12px}
+.dlinks{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.dlinks .big{font:500 12px var(--body)!important;letter-spacing:.2em;text-transform:uppercase;color:rgba(251,238,230,.7)!important;padding:6px 0}
+.dlinks .btn{margin-left:auto;background:rgba(255,255,255,.06);backdrop-filter:blur(8px)}
+.drawer .lang .op{background:rgba(255,255,255,.07);border-color:rgba(236,200,149,.22)}
+@media(max-width:600px){.drawer{top:8px;right:8px;bottom:8px;width:calc(100vw - 16px);border-radius:24px}}
 </style>
 
 <div id="prog" aria-hidden="true"></div><div id="cur" aria-hidden="true"></div>
@@ -420,10 +436,10 @@ input[type=range]{accent-color:#d9b987}
   <a class="big" href="#gift" data-close>Gift card</a>
   <a class="big" href="#faq" data-close>FAQ &amp; Policies</a>
   <a class="big" href="#visit" data-close>Contact</a>
-  <button class="big" data-sheet="privacy" style="font-size:22px">Privacy</button>
-  <button class="big" data-sheet="terms" style="font-size:22px">Terms</button>
-  <a class="btn sm" id="ownerNav" href="../../owner.html" style="align-self:flex-start;margin-top:10px">Owner login</a>
-  <div style="margin-top:14px"><small class="tiny" style="letter-spacing:.2em;text-transform:uppercase;color:rgba(251,238,230,.6)">Website language</small><div class="lang" id="lang"></div></div>
+  <div class="dfoot">
+    <div class="dlinks"><button class="big" data-sheet="privacy">Privacy</button><button class="big" data-sheet="terms">Terms</button><a class="btn sm" id="ownerNav" href="../../owner.html">Owner login</a></div>
+    <div><small class="tiny" style="letter-spacing:.2em;text-transform:uppercase;color:rgba(251,238,230,.6)">Website language</small><div class="lang" id="lang"></div></div>
+  </div>
 </aside>
 <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true"><div><div id="sheetBody"></div><p style="margin-top:20px"><button class="btn sm" id="sheetX">Close</button></p></div></div>
 
