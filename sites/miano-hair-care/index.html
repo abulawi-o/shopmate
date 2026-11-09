@@ -41,6 +41,8 @@ main{display:block}
 @keyframes drift{to{transform:translate(8%,-6%) scale(1.15)}}
 .strand{fill:none;stroke:#fff;stroke-width:1.4;stroke-linecap:round;opacity:.55;stroke-dasharray:900;animation:flow 11s linear infinite}
 @keyframes flow{from{stroke-dashoffset:0}to{stroke-dashoffset:-1800}}
+.aphoto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%}
+.arch .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,24,40,0) 55%,rgba(14,24,40,.7) 100%)}
 .arch .tag{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);font:700 11px var(--sans);letter-spacing:.3em;text-transform:uppercase;color:#fff;white-space:nowrap;opacity:.9}
 .marq{overflow:hidden;border-block:1px solid var(--line);background:var(--bg2);padding:16px 0}
 .marq div{display:flex;gap:44px;white-space:nowrap;width:max-content;animation:mq 38s linear infinite;font:italic 500 30px/1 var(--serif);color:var(--cream)}
@@ -61,7 +63,8 @@ h2.big{font:italic 500 clamp(46px,6.4vw,100px)/.95 var(--serif);letter-spacing:-
 .note{color:var(--cream2);font-size:14px;margin-top:22px;max-width:66ch}
 .stylist{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(24px,5vw,72px);align-items:center}
 @media(max-width:800px){.stylist{grid-template-columns:1fr}}
-.portrait{aspect-ratio:4/5;border-radius:999px 999px 24px 24px;background:repeating-linear-gradient(135deg,rgba(20,121,214,.08) 0 14px,transparent 14px 28px),var(--bg2);border:1px solid var(--line);display:grid;place-items:end center;padding:22px;font:700 11px var(--sans);letter-spacing:.26em;text-transform:uppercase;color:var(--cream2);text-align:center}
+.portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.portrait{position:relative;overflow:hidden;aspect-ratio:4/5;border-radius:999px 999px 24px 24px;background:repeating-linear-gradient(135deg,rgba(20,121,214,.08) 0 14px,transparent 14px 28px),var(--bg2);border:1px solid var(--line);display:grid;place-items:end center;padding:22px;font:700 11px var(--sans);letter-spacing:.26em;text-transform:uppercase;color:var(--cream2);text-align:center}
 .stylist h3{font:italic 500 clamp(50px,6vw,90px)/.95 var(--serif);margin:0 0 6px}
 .stylist .role{font:700 12px var(--sans);letter-spacing:.28em;text-transform:uppercase;color:var(--brick);margin:0 0 18px}
 .stylist p{max-width:46ch;color:var(--cream2);margin:0 0 24px}
@@ -69,7 +72,9 @@ h2.big{font:italic 500 clamp(46px,6.4vw,100px)/.95 var(--serif);letter-spacing:-
 .strip::-webkit-scrollbar{height:6px}.strip::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
 .ph{flex:0 0 clamp(220px,26vw,320px);aspect-ratio:3/4.2;scroll-snap-align:start;border-radius:160px 160px 20px 20px;border:1px solid var(--line);background:repeating-linear-gradient(135deg,rgba(20,121,214,.07) 0 14px,transparent 14px 28px),var(--card);display:grid;place-items:end center;padding:22px;font:700 11px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--cream2);text-align:center;position:relative}
 .ph:nth-child(even){border-radius:20px 20px 160px 160px;place-items:start center;margin-top:40px}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit}
 .ph::before{content:"";position:absolute;top:50%;left:50%;width:34px;height:26px;margin:-13px 0 0 -17px;border:2px solid var(--cream2);border-radius:6px;opacity:.4}
+.ph:has(img)::before,.ph:has(img)::after{display:none}
 .ph::after{content:"";position:absolute;top:50%;left:50%;width:9px;height:9px;margin:-4px 0 0 -4px;border:2px solid var(--cream2);border-radius:50%;opacity:.4}
 .rate{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-bottom:34px}
 .rate b{font:italic 600 clamp(64px,8vw,120px)/.8 var(--serif);color:var(--brick)}
@@ -197,10 +202,9 @@ body{font-variant-numeric:lining-nums;font-feature-settings:'lnum' 1}
     <div class="cta"><a class="btn" href="#book">Book an appointment</a><a class="btn ghost" href="#services">See services</a></div>
     <div class="facts"><div><b>5.0</b>82 Google reviews</div><div><b>188 Main St E</b>Downtown Milton</div><div><b>Tue to Sun</b>Closed Mondays</div></div>
   </div>
-  <div class="arch" role="img" aria-label="Soft blue and blush colour glow">
-    <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span>
-    <svg viewBox="0 0 540 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path class="strand" style="animation-delay:0.0s" d="M-20 70 C 120 -20, 200 160, 340 70 S 520 10, 560 100"/><path class="strand" style="animation-delay:-1.1s" d="M-20 128 C 120 38, 200 218, 340 128 S 520 68, 560 158"/><path class="strand" style="animation-delay:-2.2s" d="M-20 186 C 120 96, 200 276, 340 186 S 520 126, 560 216"/><path class="strand" style="animation-delay:-3.3000000000000003s" d="M-20 244 C 120 154, 200 334, 340 244 S 520 184, 560 274"/><path class="strand" style="animation-delay:-4.4s" d="M-20 302 C 120 212, 200 392, 340 302 S 520 242, 560 332"/><path class="strand" style="animation-delay:-5.5s" d="M-20 360 C 120 270, 200 450, 340 360 S 520 300, 560 390"/><path class="strand" style="animation-delay:-6.6000000000000005s" d="M-20 418 C 120 328, 200 508, 340 418 S 520 358, 560 448"/><path class="strand" style="animation-delay:-7.700000000000001s" d="M-20 476 C 120 386, 200 566, 340 476 S 520 416, 560 506"/><path class="strand" style="animation-delay:-8.8s" d="M-20 534 C 120 444, 200 624, 340 534 S 520 474, 560 564"/></svg>
-    <span class="tag">Colour · Cut · Style</span>
+  <div class="arch">
+    <img class="aphoto" src="https://static.wixstatic.com/media/11062b_cba5177db10e42d984642c53da0773dbf000.jpg/v1/fill/w_900,h_1200,al_c,q_80/miano.jpg" alt="Long, glossy wave styled by Miano Hair Care" width="900" height="1200" fetchpriority="high">
+    <span class="shade"></span><span class="tag">Colour · Cut · Style</span>
   </div>
 </div>
 <div class="marq" aria-hidden="true"><div><span>Balayage <i>✦</i> Airtouch blonding <i>✦</i> Partial highlights <i>✦</i> Toner <i>✦</i> Colour retouch <i>✦</i> Haircut <i>✦</i> Blowout <i>✦</i> Updos <i>✦</i> Balayage <i>✦</i> Airtouch blonding <i>✦</i> Partial highlights <i>✦</i> Toner <i>✦</i> Colour retouch <i>✦</i> Haircut <i>✦</i> Blowout <i>✦</i> Updos <i>✦</i> </span></div></div>
@@ -214,12 +218,12 @@ body{font-variant-numeric:lining-nums;font-feature-settings:'lnum' 1}
 
 <section id="stylist" class="rv">
   <div class="stylist">
-    <div class="portrait">Photo of Amer goes here</div>
+    <div class="portrait"><img src="https://static.wixstatic.com/media/b195ec_04e274afd59849d096ce697f4a529a54~mv2.jpg/v1/fill/w_800,h_1000,al_c,q_80/miano.jpg" alt="Stylist at work at Miano Hair Care" width="800" height="1000" loading="lazy"></div>
     <div>
       <p class="eyebrow">Your stylist</p>
       <h3>Amer</h3>
       <p class="role">Owner · Stylist</p>
-      <p>Clients mention Amer by name in their Google reviews: small details, a good cut for thick or curly hair, and colour that matches the picture in your head. Bio and photo are added with the salon.</p>
+      <p>Clients mention Amer by name in their Google reviews: small details, a good cut for thick or curly hair, and colour that matches the picture in your head. Bio and a portrait of Amer are added with the salon.</p>
       <a class="btn" href="#book" data-barber="Amer">Book with Amer</a>
     </div>
   </div>
@@ -228,8 +232,8 @@ body{font-variant-numeric:lining-nums;font-feature-settings:'lnum' 1}
 <section id="gallery" class="rv">
   <p class="eyebrow">Gallery</p>
   <h2 class="big">Recent work</h2>
-  <div class="strip"><div class="ph">Balayage</div><div class="ph">Blonding</div><div class="ph">Partial highlights</div><div class="ph">Haircut</div><div class="ph">Blowout</div><div class="ph">Updo</div></div>
-  <p class="note">Photo spots. The salon's own photos go here once they approve them.</p>
+  <div class="strip"><div class="ph"><img src="https://static.wixstatic.com/media/b195ec_04e7beff43e5433080261ca0c7a51e02~mv2.webp/v1/fill/w_600,h_800,al_c,q_80/miano.jpg" alt="Hair work by Miano Hair Care" width="600" height="800" loading="lazy"></div><div class="ph"><img src="https://static.wixstatic.com/media/b195ec_f857f54630d144dfb0925dd78ca24df8~mv2.jpg/v1/fill/w_600,h_800,al_c,q_80/miano.jpg" alt="Hair work by Miano Hair Care" width="600" height="800" loading="lazy"></div><div class="ph"><img src="https://static.wixstatic.com/media/b195ec_1808601488fd448295161077a3d3d8ff~mv2.jpg/v1/fill/w_600,h_800,al_c,q_80/miano.jpg" alt="Hair work by Miano Hair Care" width="600" height="800" loading="lazy"></div><div class="ph"><img src="https://static.wixstatic.com/media/b195ec_8fc441246f37477dbe820c18e1cab8b6~mv2.jpg/v1/fill/w_600,h_800,al_c,q_80/miano.jpg" alt="Hair work by Miano Hair Care" width="600" height="800" loading="lazy"></div><div class="ph"><img src="https://static.wixstatic.com/media/3257fc_0c65736c7b204579b81717fff23d2035~mv2.jpg/v1/fill/w_600,h_800,al_c,q_80/miano.jpg" alt="Hair work by Miano Hair Care" width="600" height="800" loading="lazy"></div><div class="ph"><img src="https://static.wixstatic.com/media/b195ec_65c87527a54341e28b350f121f568c3f~mv2.jpg/v1/fill/w_600,h_800,al_c,q_80/miano.jpg" alt="Hair work by Miano Hair Care" width="600" height="800" loading="lazy"></div><div class="ph"><img src="https://static.wixstatic.com/media/3257fc_60a843bca8a748889f19f775df47cc70~mv2.png/v1/fill/w_600,h_800,al_c,q_80/miano.jpg" alt="Hair work by Miano Hair Care" width="600" height="800" loading="lazy"></div><div class="ph"><img src="https://static.wixstatic.com/media/3257fc_bc7d71f4c1c44f268cbdf15a0b0a9af7~mv2.jpg/v1/fill/w_600,h_800,al_c,q_80/miano.jpg" alt="Hair work by Miano Hair Care" width="600" height="800" loading="lazy"></div></div>
+  <p class="note">Photos are from miano.ca, used here only for this preview. We get the salon's OK before they stay, and they can add their own.</p>
 </section>
 
 <section id="reviews" class="rv">
