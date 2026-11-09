@@ -1,13 +1,55 @@
 {
- "updated": "2026-11-08",
+ "updated": "2026-11-08 21:35",
  "note": "Real work log. Written by Claude after each piece of work. Nothing here is simulated.",
  "agents": [
-  {"id":"nova","status":"Done","progress":100,"when":"Nov 8","task":"Found and rated 39 local prospects (19 barbers, 10 salons, 10 dental clinics). Audited 4 barber websites. Next: audit the rest."},
-  {"id":"sage","status":"Done","progress":100,"when":"Nov 7-8","task":"Set the offer, the pricing and the first-10-shops rule in the sales playbook."},
-  {"id":"echo","status":"Done","progress":100,"when":"Nov 8","task":"Wrote the walk-in, Instagram DM and follow-up scripts for Origin and Golden Chair. Nobody has been contacted yet. That step is the King's."},
-  {"id":"forge","status":"Done","progress":100,"when":"Nov 8","task":"Built the Origin Barbershop concept site (booking calendar, clock time picker, social icons, Owner login link). Live on GitHub."},
-  {"id":"pixel","status":"Done","progress":100,"when":"Nov 8","task":"Made the screenshots and walkthrough videos for the Origin and Golden Chair client folders and the AI system."},
-  {"id":"argus","status":"Done","progress":100,"when":"Nov 8","task":"Tested the Origin booking flow on desktop and phone. The owner login and the admin page are not tested yet."},
-  {"id":"ledger","status":"Not started","progress":0,"when":"","task":"Client payment tracker (start date, due date). Nothing built yet. First client has not signed."}
+  {
+   "id": "nova",
+   "status": "Working",
+   "progress": 25,
+   "when": "Nov 8, 9:35 pm",
+   "task": "NOW: auditing Fade Vault Barbershop (Milton). Found so far: 4.9 stars, 467 reviews, hexagon-lit shop. Its only web link is a Clover booking page (cloveronline.com), not a real website. Still to read: hours and photos. Then The Gem Cut and Master Chair."
+  },
+  {
+   "id": "sage",
+   "status": "Done",
+   "progress": 100,
+   "when": "Nov 7-8",
+   "task": "Set the offer, the pricing and the first-10-shops rule in the sales playbook."
+  },
+  {
+   "id": "echo",
+   "status": "Done",
+   "progress": 100,
+   "when": "Nov 8",
+   "task": "Wrote the walk-in, Instagram DM and follow-up scripts for Origin and Golden Chair. Nobody has been contacted yet. That step is the King's."
+  },
+  {
+   "id": "forge",
+   "status": "Queued",
+   "progress": 0,
+   "when": "Nov 8, 9:35 pm",
+   "task": "NEXT: build the Fade Vault concept site (same standard as Origin: booking calendar, clock picker, socials, Owner login) once Nova finishes the audit. One shop at a time, then Gem Cut, then Master Chair."
+  },
+  {
+   "id": "pixel",
+   "status": "Queued",
+   "progress": 0,
+   "when": "Nov 8, 9:35 pm",
+   "task": "NEXT: record the walkthrough video and screenshots for each new site, and save each client folder to the Desktop 'clients' folder. Drone-style flythrough only if a good video exists for that shop."
+  },
+  {
+   "id": "argus",
+   "status": "Queued",
+   "progress": 0,
+   "when": "Nov 8, 9:35 pm",
+   "task": "NEXT: test every new site on desktop and phone before it goes in the folder. No site is delivered untested."
+  },
+  {
+   "id": "ledger",
+   "status": "Not started",
+   "progress": 0,
+   "when": "",
+   "task": "Client payment tracker (start date, due date). Nothing built yet. First client has not signed."
+  }
  ]
 }
