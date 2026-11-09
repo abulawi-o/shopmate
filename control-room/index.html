@@ -160,7 +160,7 @@ button{cursor:pointer}
       <h1>Control Room</h1>
       <span class="chip" id="modechip">CONNECTING…</span>
     </header>
-    <div class="hint">Click the floor to walk · drag to rotate · scroll to zoom · click a robot to chat · click an open seat to add an agent</div>
+    <div class="hint">Click the floor to walk · W A S D to fly · Q E up down · drag to rotate · shift-drag to pan · scroll to zoom · click a robot to chat · click an open seat to add an agent</div>
     <div class="stage-ctl"><button type="button" class="ctl" id="btn-king" aria-pressed="false">Follow me</button></div>
     <div class="feed" id="feed" aria-hidden="true"></div>
     <div class="activity"><span class="dot"></span><span class="lab">LIVE</span><span id="activity">The control room is at work.</span></div>
@@ -958,6 +958,7 @@ function init3D(){
     var H=10,W=H*2.9630,arc=W/wallR;
     var CW=2400,CH=810,cv=document.createElement('canvas'); cv.width=CW; cv.height=CH; var cx=cv.getContext('2d');
     var tex=new THREE.CanvasTexture(cv); tex.encoding=THREE.sRGBEncoding; tex.anisotropy=8;
+    var tex2=new THREE.CanvasTexture(cv); tex2.encoding=THREE.sRGBEncoding; tex2.anisotropy=8; tex2.wrapS=THREE.RepeatWrapping; tex2.repeat.x=-1; tex2.offset.x=1;
     var LIVE={weather:null,site:null,pipe:null,tiles:{}};
     var MLAT=43.5183,MLON=-79.8774,MZ=12;
     function tileXY(lat,lon,z){var n=Math.pow(2,z); return {x:(lon+180)/360*n,y:(1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*n};}
@@ -1013,7 +1014,7 @@ function init3D(){
       var tot=0; PANELS.forEach(function(q){tot+=q[0];}); var gap=18, avail=CW-gap*(PANELS.length-1), xo=0;
       cx.save(); cx.setTransform(-1,0,0,1,CW,0); cx.fillStyle='#030813'; cx.fillRect(0,0,CW,CH);
       PANELS.forEach(function(q,i){var pw=Math.round(avail*q[0]/tot); cx.save(); cx.translate(xo,0); cx.beginPath(); cx.rect(0,0,pw,CH); cx.clip(); try{q[1](cx,pw,CH);}catch(e){} cx.restore(); xo+=pw+gap;});
-      cx.restore(); tex.needsUpdate=true;
+      cx.restore(); tex.needsUpdate=true; tex2.needsUpdate=true;
     }
     LIVE.paint=paintScreens; paintScreens();
     function loadWeather(){fetch('https://api.open-meteo.com/v1/forecast?latitude='+MLAT+'&longitude='+MLON+'&current=temperature_2m,wind_speed_10m').then(function(r){return r.json();}).then(function(j){LIVE.weather=j.current; paintScreens();}).catch(function(){});}
@@ -1022,9 +1023,9 @@ function init3D(){
     loadWeather(); checkSite(); loadPipe();
     setInterval(function(){loadWeather(); checkSite(); loadPipe();},300000);
     setInterval(paintScreens,20000);
-    var scr=new THREE.Mesh(new THREE.CylinderGeometry(wallR,wallR,H,64,1,true,Math.PI-arc/2,arc),new THREE.MeshBasicMaterial({map:tex,side:THREE.BackSide,fog:false,transparent:true}));
+    var scr=new THREE.Mesh(new THREE.CylinderGeometry(wallR,wallR,H,64,1,true,Math.PI-arc/2,arc),new THREE.MeshBasicMaterial({map:tex,side:THREE.BackSide,fog:false}));
     scr.position.y=7.2; scene.add(scr); wallMat=scr.material;
-    var scrBack=new THREE.Mesh(new THREE.CylinderGeometry(wallR+0.15,wallR+0.15,H,64,1,true,Math.PI-arc/2,arc),new THREE.MeshStandardMaterial({color:0x0a1428,roughness:0.5,metalness:0.55,side:THREE.FrontSide,transparent:true}));
+    var scrBack=new THREE.Mesh(new THREE.CylinderGeometry(wallR+0.15,wallR+0.15,H,64,1,true,Math.PI-arc/2,arc),new THREE.MeshBasicMaterial({map:tex2,side:THREE.FrontSide,fog:false}));
     scrBack.position.y=7.2; scene.add(scrBack); window.__scrBack=scrBack;
     [-1,1].forEach(function(e){var l=glow(0.12,H+0.2,0.12,0x38e1ff); var a=Math.PI+e*arc/2; l.position.set(Math.sin(a)*(wallR-0.05),7.2,Math.cos(a)*(wallR-0.05)); l.rotation.y=a; scene.add(l);});
     if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){redraws.forEach(function(f){f();});});
@@ -1180,20 +1181,32 @@ function init3D(){
 
   /* camera */
   var cam={az:0.18,pol:0.84,dist:44,base:44,tdist:44,target:new V3(0,3.0,1),ttarget:new V3(0,3.0,1)};
+  var free=new V3(0,3.0,1),keys={};
   var ptrs={},downAt=null,moved=0,pinch=0;
   canvas.addEventListener('pointerdown',function(e){canvas.setPointerCapture(e.pointerId); ptrs[e.pointerId]={x:e.clientX,y:e.clientY}; if(Object.keys(ptrs).length===1){downAt={x:e.clientX,y:e.clientY}; moved=0;} pinch=0;});
   canvas.addEventListener('pointermove',function(e){
     var p=ptrs[e.pointerId]; if(!p) return; var ids=Object.keys(ptrs);
-    if(ids.length===2){var o=ptrs[ids[0]==e.pointerId?ids[1]:ids[0]]; var d=Math.hypot(e.clientX-o.x,e.clientY-o.y); if(pinch){cam.base=Math.max(12,Math.min(50,cam.base*(pinch/d)));} pinch=d; p.x=e.clientX; p.y=e.clientY; moved=99; return;}
+    if(ids.length===2){var o=ptrs[ids[0]==e.pointerId?ids[1]:ids[0]]; var d=Math.hypot(e.clientX-o.x,e.clientY-o.y); if(pinch){cam.base=Math.max(3,Math.min(120,cam.base*(pinch/d)));} pinch=d; p.x=e.clientX; p.y=e.clientY; moved=99; return;}
     var dx=e.clientX-p.x,dy=e.clientY-p.y; p.x=e.clientX; p.y=e.clientY; moved+=Math.abs(dx)+Math.abs(dy);
-    cam.az-=dx*0.006; cam.pol=Math.max(0.4,Math.min(1.3,cam.pol-dy*0.005));
+    if(e.shiftKey||(e.buttons&2)||(e.buttons&4)){state.follow=false; state.followKing=false; var pk=cam.dist*0.0016; free.x+=(-Math.cos(cam.az)*dx-Math.sin(cam.az)*dy)*pk; free.z+=(Math.sin(cam.az)*dx-Math.cos(cam.az)*dy)*pk; moved=99; return;}
+    cam.az-=dx*0.006; cam.pol=Math.max(0.05,Math.min(1.55,cam.pol-dy*0.005));
   });
   function up(e){
     var had=ptrs[e.pointerId]; delete ptrs[e.pointerId]; pinch=0;
     if(had&&downAt&&moved<6&&e.type==='pointerup'){pick(e.clientX,e.clientY);} downAt=null;
   }
   canvas.addEventListener('pointerup',up); canvas.addEventListener('pointercancel',up);
-  canvas.addEventListener('wheel',function(e){e.preventDefault(); cam.base=Math.max(12,Math.min(50,cam.base*(1+e.deltaY*0.001)));},{passive:false});
+  canvas.addEventListener('contextmenu',function(e){e.preventDefault();});
+  canvas.addEventListener('wheel',function(e){e.preventDefault();
+    var f=Math.exp(Math.max(-120,Math.min(120,e.deltaY))*0.0015);
+    if(f<1&&!state.follow&&!state.followKing){ /* zoom toward the point under the cursor */
+      var r=canvas.getBoundingClientRect(); ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1); ray.setFromCamera(ndc,camera);
+      var hp=new V3(); if(ray.ray.intersectPlane(plane,hp)){var k2=(1-f)*0.9; free.x+=(hp.x-free.x)*k2; free.z+=(hp.z-free.z)*k2; free.y+=(FLOOR+1-free.y)*k2*0.5;}
+    }
+    cam.base=Math.max(3,Math.min(120,cam.base*f));},{passive:false});
+  window.addEventListener('keydown',function(e){var tg=e.target&&e.target.tagName; if(tg==='INPUT'||tg==='TEXTAREA'||e.ctrlKey||e.metaKey||e.altKey) return; var k=e.key.toLowerCase(); if('wasdqe'.indexOf(k)>-1&&k.length===1||k==='arrowleft'||k==='arrowright'||k==='arrowup'||k==='arrowdown'||k==='shift'){keys[k]=1; if(k!=='shift') e.preventDefault();}});
+  window.addEventListener('keyup',function(e){delete keys[e.key.toLowerCase()];});
+  window.addEventListener('blur',function(){keys={};});
   var ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),plane=new THREE.Plane(new V3(0,1,0),-FLOOR),pt=new V3();
   function kingWalk(p){
     var x=Math.max(-22,Math.min(22,p.x)),z=Math.max(-10,Math.min(18,p.z)); var tgt=new V3(x,FLOOR,z);
@@ -1304,7 +1317,7 @@ function init3D(){
     if(!reduce){net.rotation.y+=dt*0.04; holo.rotation.z+=dt*0.6;
       pulse.forEach(function(h){h.material.opacity=0.2+0.12*Math.sin(t*1.6+h.userData.ph);});
       if(wallMat){var wb=0.93+0.07*Math.sin(t*1.3); wallMat.color.setRGB(wb,wb,wb);}}
-    if(wallMat&&window.__scrBack){var bh=camera.position.z<-3?0.12:1; wallMat.opacity+=(bh-wallMat.opacity)*0.12; window.__scrBack.material.opacity=wallMat.opacity;}
+    if(wallMat&&window.__scrBack){window.__scrBack.material.color.copy(wallMat.color);}
     for(var pi=packets.length-1;pi>=0;pi--){var pk=packets[pi]; pk.t+=dt/1.1; var pu=Math.min(1,pk.t); pk.s.position.set(pk.a.g.position.x*pu,FLOOR+1.2+Math.sin(Math.PI*pu)*1.6,pk.a.g.position.z*pu); if(pu>=1){scene.remove(pk.s); pk.s.material.dispose(); packets.splice(pi,1);}}
     var sel=run[state.sel];
     selRing.visible=state.view==='direct'; if(sel){selRing.position.set(sel.g.position.x,FLOOR+0.04,sel.g.position.z);}
@@ -1312,7 +1325,13 @@ function init3D(){
     if(markerT>0){markerT-=dt; marker.material.opacity=Math.max(0,Math.min(1,markerT/0.6)); var sc2=1+(1.2-markerT)*0.6; marker.scale.set(sc2,sc2,sc2);} else marker.material.opacity=0;
     if(state.followKing){cam.ttarget.set(kingAg.g.position.x,1.2,kingAg.g.position.z); cam.tdist=Math.min(cam.base,22);}
     else if(state.follow&&sel){cam.ttarget.set(sel.g.position.x,1.2,sel.g.position.z); cam.tdist=Math.min(cam.base,19);}
-    else {cam.ttarget.set(0,3.0,1); cam.tdist=cam.base;}
+    else {cam.ttarget.copy(free); cam.tdist=cam.base;}
+    (function(){var mv=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0),st=(keys.d?1:0)-(keys.a?1:0),vy=(keys.e?1:0)-(keys.q?1:0),tn=(keys.arrowright?1:0)-(keys.arrowleft?1:0);
+      if(tn) cam.az-=tn*dt*1.6;
+      if(mv||st||vy){ if(state.follow||state.followKing){free.set(cam.target.x,cam.target.y,cam.target.z);} state.follow=false; state.followKing=false;
+        var sp=(keys.shift?34:14)*dt*Math.max(0.35,cam.base/44+0.2), fx=-Math.sin(cam.az),fz=-Math.cos(cam.az),rx=Math.cos(cam.az),rz=-Math.sin(cam.az);
+        free.x=Math.max(-70,Math.min(70,free.x+(fx*mv+rx*st)*sp)); free.z=Math.max(-70,Math.min(70,free.z+(fz*mv+rz*st)*sp)); free.y=Math.max(0.6,Math.min(40,free.y+vy*sp)); }
+    })();
     var k=Math.min(1,dt*3.5); cam.target.lerp(cam.ttarget,k); cam.dist+=(cam.tdist-cam.dist)*k;
     var fit=camera.aspect<1.1?1.5:1; var d=cam.dist*fit;
     camera.position.set(cam.target.x+d*Math.sin(cam.pol)*Math.sin(cam.az),cam.target.y+d*Math.cos(cam.pol),cam.target.z+d*Math.sin(cam.pol)*Math.cos(cam.az));
