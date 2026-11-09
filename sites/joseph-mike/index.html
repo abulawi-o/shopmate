@@ -66,6 +66,13 @@ h2.big{font:800 clamp(44px,7vw,110px)/.92 var(--serif);letter-spacing:-.04em;mar
 .day b{display:block;font:700 12px var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--cream2);margin-bottom:6px}
 .day span{font:700 20px/1.2 var(--serif)}
 .day.x span{color:var(--brick)}
+.gal{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:230px;gap:12px}
+.gal div{position:relative;border:1px solid var(--line);background:repeating-linear-gradient(135deg,rgba(90,169,255,.07) 0 14px,transparent 14px 28px),var(--card);display:flex;align-items:flex-end;padding:16px;font:700 12px var(--sans);letter-spacing:.22em;text-transform:uppercase;color:var(--cream2)}
+.gal div::before{content:"";position:absolute;top:16px;right:16px;width:28px;height:22px;border:2px solid var(--cream2);border-radius:5px;opacity:.5}
+.gal div::after{content:"";position:absolute;top:21px;right:23px;width:8px;height:8px;border:2px solid var(--cream2);border-radius:50%;opacity:.5}
+.gal div:nth-child(1){grid-column:span 2;grid-row:span 2}
+.gal div:nth-child(4),.gal div:nth-child(5),.gal div:nth-child(6){grid-column:span 2}
+@media(max-width:760px){.gal{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:150px}.gal div:nth-child(1){grid-row:span 1}.gal div:nth-child(1),.gal div:nth-child(4),.gal div:nth-child(5),.gal div:nth-child(6){grid-column:span 2}.gal div:nth-child(2),.gal div:nth-child(3){grid-column:span 1}}
 .vgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 @media(max-width:700px){.vgrid{grid-template-columns:1fr}}
 .vbox{border:1px solid var(--line);padding:26px;background:var(--card)}
@@ -158,7 +165,7 @@ input:focus,select:focus{outline:none;border-bottom-color:var(--brick)}
 @media(max-width:860px){#socials a{width:34px;height:34px}}
 </style></head><body>
 <header class="top">
-  <nav aria-label="Sections"><a href="#services">Services</a><a href="#chairs">Barbers</a><a href="#book">Book</a><a href="#visit">Visit</a></nav>
+  <nav aria-label="Sections"><a href="#services">Services</a><a href="#chairs">Barbers</a><a href="#gallery">Gallery</a><a href="#book">Book</a><a href="#visit">Visit</a></nav>
   <a class="logo" href="#top" translate="no">Joseph <i>&amp;</i> Mike</a>
   <div class="right"><span id="socials"></span><a class="olink" id="ownerNav" href="../../owner.html">Owner</a><a class="btn" href="#book">Book</a></div>
 </header>
@@ -191,6 +198,13 @@ input:focus,select:focus{outline:none;border-bottom-color:var(--brick)}
     <div class="pan"><span class="ini" aria-hidden="true">M</span><h3>Mike</h3><p>Named in the shop's name. Bio and photo added with the shop.</p><a class="btn" href="#book" data-barber="Mike">Book Mike</a></div>
   </div>
   <p class="note">Barber names come from the shop's name on Google, plus Ahmad named in a Google review. The shop confirms the team.</p>
+</section>
+
+<section id="gallery" class="rv">
+  <p class="eyebrow">Gallery</p>
+  <h2 class="big">The shop</h2>
+  <div class="gal"><div>The shop</div><div>Fresh fade</div><div>Hot towel</div><div>Beard trim</div><div>The chairs</div><div>Storefront</div></div>
+  <p class="note">Photo spots. The shop's own photos go here once the owners approve them.</p>
 </section>
 
 <section id="book" class="rv">
