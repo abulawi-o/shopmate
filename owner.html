@@ -24,10 +24,39 @@ const lsSet=(k,v)=>{try{v===null?localStorage.removeItem(k):localStorage.setItem
 const authStore={getItem:k=>{try{return localStorage.getItem(k)??sessionStorage.getItem(k)}catch(e){return null}},setItem:k=>0,removeItem:k=>{try{localStorage.removeItem(k);sessionStorage.removeItem(k)}catch(e){}}};
 authStore.setItem=(k,v)=>{try{const keep=lsGet('leo_keep')==='1';(keep?localStorage:sessionStorage).setItem(k,v);(keep?sessionStorage:localStorage).removeItem(k)}catch(e){}};
 /* Safety: signed in on this device only while it is used. Not kept: signs out after 30 idle minutes. Kept: after 14 idle days, and always after 30 days. */
+const DEMO = /^#demo/.test(location.hash);
+window.addEventListener('hashchange', () => location.reload());
 const IDLE_MS = 30 * 60 * 1000, KEEP_IDLE_MS = 14 * 86400000, MAX_MS = 30 * 86400000;
-const touchAct = () => lsSet('leo_act', String(Date.now()));
+const touchAct = () => { if (!DEMO) lsSet('leo_act', String(Date.now())); };
 const sessionExpired = () => { const a = +(lsGet('leo_act') || 0), l = +(lsGet('leo_login') || 0), keep = lsGet('leo_keep') === '1', n = Date.now(); if (!a) return true; if (n - a > (keep ? KEEP_IDLE_MS : IDLE_MS)) return true; if (l && n - l > MAX_MS) return true; return false; };
-const sb = supabase.createClient(LEO.url, LEO.key, { auth: { storage: authStore, storageKey: new URLSearchParams(location.search).get('shop') ? 'leo-admin-auth' : 'leo-owner-auth', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+/* DEMO MODE: open owner.html#demo (or #demo=Shop%20Name). Fake shop, fake customers, kept only in this tab's memory. No login, no network calls, nothing is sent. */
+const demoName = (() => { try { const m = decodeURIComponent(location.hash.slice(1)).match(/^demo=(.+)$/); return m ? m[1].replace(/[<>"'&]/g, '').trim().slice(0, 40) : ''; } catch (e) { return ''; } })() || 'Demo Barbershop';
+function demoClient() {
+  const T = new Date(), add = n => { const d = new Date(T); d.setDate(d.getDate() + n); return E.iso(d); };
+  const bk = (i, n, name, time, barber, svc, price, extra) => Object.assign({ id: 'd' + i, shop_id: 'demo', name, phone: '90555501' + String(10 + i), service: svc, price, barber, date: add(n), time, end_time: time + (svc === 'Beard trim' ? 20 : 30), status: 'accepted', source: 'website', consent: true, created_at: add(-6) + 'T10:00:00Z' }, extra || {});
+  const st = E.normalize(null); E.addLead(st, E.dayNum(add(0)), 'Missed caller', '9055550177', 'missed');
+  const DB = {
+    profiles: [{ id: 'demo-user', role: 'owner', shop_id: 'demo' }],
+    shops: [{ id: 'demo', name: demoName, pkg_site: true, pkg_ai: true, closed_site: false, closed_ai: false }],
+    shop_site: [{ shop_id: 'demo', content: { tagline: 'Sharp cuts. Easy booking.', address: '123 Sample Street, Your City', phone: '(555) 010-0123', services: [{ name: 'Fade', mins: 30, price: 30 }, { name: 'Haircut', mins: 30, price: 28 }, { name: 'Beard trim', mins: 20, price: 20 }], team: [{ id: 'b1', name: 'Alex', role: 'Barber', days: [true, true, true, true, true, true, false], away: false }, { id: 'b2', name: 'Sam', role: 'Barber', days: [true, true, true, true, true, true, false], away: false }], hours: { start: 540, end: 1080, days: [true, true, true, true, true, true, false] }, socials: {} } }],
+    bookings: [bk(1, 0, 'Jordan', 600, 'Alex', 'Fade', 30), bk(2, 0, 'Priya', 660, 'Sam', 'Haircut', 28), bk(3, 0, 'Marcus', 720, 'Alex', 'Beard trim', 20), bk(4, 0, 'Chloe', 840, 'Sam', 'Fade', 30), bk(5, -1, 'Ella', 600, 'Sam', 'Haircut', 28), bk(6, -1, 'Tyler', 690, 'Alex', 'Fade', 30), bk(7, 1, 'Noah', 600, 'Alex', 'Fade', 30), bk(8, 1, 'Amir', 780, 'Sam', 'Haircut', 28), bk(9, 2, 'Lena', 900, 'Alex', 'Fade', 30, { status: 'new', created_at: add(0) + 'T08:00:00Z' }), bk(10, 3, 'Omar', 780, 'Sam', 'Beard trim', 20, { status: 'new', created_at: add(0) + 'T09:00:00Z' }), bk(11, -45, 'Daniel', 600, 'Alex', 'Fade', 30), bk(12, -50, 'Sofia', 660, 'Sam', 'Haircut', 28), bk(13, -9, 'Ben', 600, 'Alex', 'Fade', 30)],
+    engine_state: [{ shop_id: 'demo', data: st }], support_tickets: [], admin_audit: []
+  };
+  const q = table => {
+    let op = 'select', patch = null; const filters = [];
+    const b = { select() { return b; }, order() { return b; }, limit() { return b; }, eq(k, v) { filters.push([k, v]); return b; }, update(p) { op = 'update'; patch = p; return b; }, insert(r) { op = 'insert'; patch = r; return b; }, maybeSingle() { return run(true); }, single() { return run(true); }, then(a, c) { return run(false).then(a, c); } };
+    function run(single) {
+      const rows = DB[table] || (DB[table] = []); let r = rows.filter(x => filters.every(f => x[f[0]] === f[1]));
+      if (op === 'update') r.forEach(x => { if (table === 'engine_state') x.data = JSON.parse(JSON.stringify(patch.data)); else Object.assign(x, patch); });
+      if (op === 'insert') { const n = Object.assign({ id: 'n' + Math.random().toString(36).slice(2, 8), created_at: new Date().toISOString() }, patch); rows.push(n); r = [n]; }
+      const out = r.map(x => (table === 'engine_state' ? { shop_id: x.shop_id, data: JSON.parse(JSON.stringify(x.data)) } : x));
+      return Promise.resolve({ data: single ? (out[0] || null) : out, error: null });
+    }
+    return b;
+  };
+  return { auth: { getSession: async () => ({ data: { session: { user: { id: 'demo-user', email: 'demo@example.com' } } } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }), signOut: async () => ({}), signInWithPassword: async () => ({ data: {}, error: null }) }, from: q, rpc: async () => ({ data: null, error: null }), channel: () => ({ on() { return this; }, subscribe() { return this; } }), removeChannel() {} };
+}
+const sb = DEMO ? demoClient() : supabase.createClient(LEO.url, LEO.key, { auth: { storage: authStore, storageKey: new URLSearchParams(location.search).get('shop') ? 'leo-admin-auth' : 'leo-owner-auth', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const D = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const todayIso = () => E.iso(new Date());
 const dow = s => (E.fromIso(s).getDay() + 6) % 7;
@@ -143,7 +172,7 @@ function engAuto(rerender) {
 sb.auth.onAuthStateChange((ev) => { if (ev === 'PASSWORD_RECOVERY') { S.recovery = true; render(); } });
 async function boot() {
   let { data: { session } } = await sb.auth.getSession();
-  if (session && sessionExpired()) { try { await sb.auth.signOut(); } catch (e) {} session = null; }
+  if (!DEMO && session && sessionExpired()) { try { await sb.auth.signOut(); } catch (e) {} session = null; }
   if (!session) { S.user = null; return render(); }
   touchAct();
   S.user = session.user;
@@ -159,7 +188,7 @@ async function boot() {
   if (!sh) { S.noAccess = 'Shop not found.'; return render(); }
   S.shop = sh;
   if (S.asAdmin) await sb.from('admin_audit').insert({ shop_id: sh.id, admin_id: S.user.id, action: 'opened their space' });
-  else { sb.rpc('touch_login'); sb.rpc('sync_owner_email'); }
+  else { if (!DEMO) { sb.rpc('touch_login'); sb.rpc('sync_owner_email'); } }
   await loadAll();
   S.tab = firstTab();
   engAuto(false);
@@ -172,7 +201,7 @@ function tabs() {
   if (ai) t.push('today', 'appointments', 'inbox', 'automations', 'customers');
   if (ai || site) t.push('team');
   if (site) t.push('website');
-  if (!S.asAdmin) t.push('help', 'account');
+  if (!S.asAdmin && !DEMO) t.push('help', 'account');
   return t;
 }
 
@@ -181,10 +210,10 @@ const newCount = () => S.bookings.filter(b => b.status === 'new').length;
 const draftCount = () => S.eng.outbox.filter(m => m.status === 'draft').length;
 function shell(main) {
   const nav = tabs().map(k => { const n = k === 'inbox' ? newCount() : k === 'automations' ? draftCount() : k === 'help' ? unseenReplies() : 0; return `<button type="button" class="${S.tab === k ? 'on' : ''}" data-tab="${k}">${ICO[k]}<span>${TABNAMES[k]}</span>${n ? `<em>${n}</em>` : ''}</button>`; }).join('');
-  const banner = S.asAdmin ? `<div class="banner"><span>ADMIN VIEW · ${esc(S.shop.name)} · your changes are real and logged</span><a class="btn small ghost" href="hq-k7m2/index.html" style="display:inline-flex;align-items:center;text-decoration:none">← Back to admin</a></div>` : '';
+  const banner = DEMO ? `<div class="banner"><span>DEMO · sample shop and messages · nothing is real and nothing is sent</span></div>` : S.asAdmin ? `<div class="banner"><span>ADMIN VIEW · ${esc(S.shop.name)} · your changes are real and logged</span><a class="btn small ghost" href="hq-k7m2/index.html" style="display:inline-flex;align-items:center;text-decoration:none">← Back to admin</a></div>` : '';
   const open = !!S.menu, pend = newCount() + draftCount() + (S.asAdmin ? 0 : unseenReplies());
   const bar = `<header class="bar"><button type="button" class="hbtn" data-a="menu" aria-label="Open menu" aria-expanded="${open}" aria-controls="drawer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>${pend ? '<i class="dot"></i>' : ''}</button><div class="shopn"><img src="mark.svg" alt="">${esc(S.shop.name)}</div><span class="pg">${esc(TABNAMES[S.tab] || '')}</span></header>`;
-  const out = S.asAdmin ? '<a class="btn small ghost out" href="hq-k7m2/index.html" style="display:flex;align-items:center;text-decoration:none;color:var(--navon);border:1px solid var(--navfg);border-radius:12px;min-height:46px;padding:0 12px;font-weight:700">\u2190 Back to admin</a>' : '<button type="button" class="out" data-a="logout">Log out</button>';
+  const out = DEMO ? '<a class="btn small ghost out" href="index.html" style="display:flex;align-items:center;text-decoration:none;color:var(--navon);border:1px solid var(--navfg);border-radius:12px;min-height:46px;padding:0 12px;font-weight:700">Exit demo</a>' : S.asAdmin ? '<a class="btn small ghost out" href="hq-k7m2/index.html" style="display:flex;align-items:center;text-decoration:none;color:var(--navon);border:1px solid var(--navfg);border-radius:12px;min-height:46px;padding:0 12px;font-weight:700">\u2190 Back to admin</a>' : '<button type="button" class="out" data-a="logout">Log out</button>';
   const drawer = `<nav class="side drawer ${open ? 'open' : ''}" id="drawer" aria-label="Main" ${open ? '' : 'aria-hidden="true"'}><div class="dtop"><div class="brand2">${esc(S.shop.name)}</div><button type="button" class="x" data-a="closemenu" aria-label="Close menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>${nav}<div class="note">Every message includes your business name, address and a STOP option. Customers who say STOP are never messaged again.</div><div class="links"><a href="guide.html">How to use this panel</a> &middot; <a href="legal.html">Terms and privacy</a></div>${out}</nav>${open ? '<div class="scrim" data-a="closemenu"></div>' : ''}`;
   return `${banner}${bar}${drawer}<div class="body"><div class="main">${main}</div></div>`;
 }
@@ -431,7 +460,7 @@ async function updateBooking(id, patch) {
 }
 /* Sensitive actions need the password once per visit: right after you type it to sign in, nothing more is asked. Only a restored (kept) sign-in asks once, then stays good for 12 hours. Turning something OFF never asks. */
 const PW_MS = 12 * 3600 * 1000;
-const needsPw = el => { if (S.asAdmin || Date.now() - (S.pwOk || 0) < PW_MS) return false; const a = el.dataset.a; if (a === 'approve') return true; if (a === 'auto') return !S.eng.auto; if (a === 'ton') return !S.eng.on[el.dataset.k]; return false; };
+const needsPw = el => { if (DEMO || S.asAdmin || Date.now() - (S.pwOk || 0) < PW_MS) return false; const a = el.dataset.a; if (a === 'approve') return true; if (a === 'auto') return !S.eng.auto; if (a === 'ton') return !S.eng.on[el.dataset.k]; return false; };
 const gateHtml = () => S.gate ? `<div class="gateBg"><form class="card gateBox" id="gateForm"><h4>Confirm it is you</h4><p class="fine">Please type your password to continue. You will not be asked again for 12 hours.</p><label class="l">Password<input type="password" id="gpw" autocomplete="current-password" maxlength="100" required></label><div class="err" role="alert">${esc(S.gateErr || '')}</div><div class="row"><button class="btn small" type="submit">Continue</button><button class="btn ghost small" type="button" data-a="gatecancel">Cancel</button></div></form></div>` : '';
 const ACT = {
   gatecancel: () => { S.gate = null; },
@@ -583,7 +612,7 @@ document.addEventListener('submit', async ev => {
 });
 let lastTouch = 0;
 ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(t => document.addEventListener(t, () => { const n = Date.now(); if (S.user && n - lastTouch > 20000) { lastTouch = n; touchAct(); } }, { passive: true }));
-const idleCheck = async () => { if (S.user && sessionExpired()) { try { await sb.auth.signOut(); } catch (e) {} location.reload(); } };
+const idleCheck = async () => { if (!DEMO && S.user && sessionExpired()) { try { await sb.auth.signOut(); } catch (e) {} location.reload(); } };
 setInterval(idleCheck, 30000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') idleCheck(); });
 setInterval(() => { if (S.shop && document.visibilityState === 'visible') Promise.all([engRefresh(), reloadBookings(), loadTickets()]).then(() => { if (!document.activeElement || !/INPUT|SELECT/.test(document.activeElement.tagName)) render(); }); }, 45000);
