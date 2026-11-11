@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="app.css">
+<style>.gateBg{position:fixed;inset:0;background:rgba(10,20,30,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}.gateBox{width:100%;max-width:380px}</style>
 </head>
 <body>
 <div id="app"><p style="text-align:center;margin-top:20vh;color:#4C5852">Loading…</p></div>
@@ -21,7 +22,11 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
 const authStore={getItem:k=>{try{return localStorage.getItem(k)??sessionStorage.getItem(k)}catch(e){return null}},setItem:k=>0,removeItem:k=>{try{localStorage.removeItem(k);sessionStorage.removeItem(k)}catch(e){}}};
-authStore.setItem=(k,v)=>{try{const keep=lsGet('leo_keep')!=='0';(keep?localStorage:sessionStorage).setItem(k,v);(keep?sessionStorage:localStorage).removeItem(k)}catch(e){}};
+authStore.setItem=(k,v)=>{try{const keep=lsGet('leo_keep')==='1';(keep?localStorage:sessionStorage).setItem(k,v);(keep?sessionStorage:localStorage).removeItem(k)}catch(e){}};
+/* Safety: signed in on this device only while it is used. Not kept: signs out after 30 idle minutes. Kept: after 14 idle days, and always after 30 days. */
+const IDLE_MS = 30 * 60 * 1000, KEEP_IDLE_MS = 14 * 86400000, MAX_MS = 30 * 86400000;
+const touchAct = () => lsSet('leo_act', String(Date.now()));
+const sessionExpired = () => { const a = +(lsGet('leo_act') || 0), l = +(lsGet('leo_login') || 0), keep = lsGet('leo_keep') === '1', n = Date.now(); if (!a) return true; if (n - a > (keep ? KEEP_IDLE_MS : IDLE_MS)) return true; if (l && n - l > MAX_MS) return true; return false; };
 const sb = supabase.createClient(LEO.url, LEO.key, { auth: { storage: authStore, storageKey: new URLSearchParams(location.search).get('shop') ? 'leo-admin-auth' : 'leo-owner-auth', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const D = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const todayIso = () => E.iso(new Date());
@@ -44,7 +49,7 @@ const ICO = {
 const TABNAMES = { today: 'Overview', appointments: 'Appointments', inbox: 'Requests', automations: 'Automations', customers: 'Customers', team: 'Team and staff', website: 'Website', help: 'Help', account: 'My login' };
 
 const S = { user: null, shop: null, content: null, bookings: [], tickets: [], tForm: { subject: '', body: '' }, eng: null, asAdmin: false, recovery: false, tab: 'today', date: todayIso(), form: { name: '', phone: '', barber: '', date: todayIso(), time: '', end: '', consent: false }, msg: '', err: '', loginErr: '', info: '', busy: false, noAccess: '', em: '', menu: false };
-S.remember = !!lsGet('leo_email'); S.keep = lsGet('leo_keep') !== '0'; if (S.remember) S.em = lsGet('leo_email') || '';
+S.remember = !!lsGet('leo_email'); S.keep = lsGet('leo_keep') === '1'; if (S.remember) S.em = lsGet('leo_email') || '';
 const live = k => !!S.shop && S.shop['pkg_' + k] && !S.shop['closed_' + k];
 const has = k => !!S.shop && S.shop['pkg_' + k];
 
@@ -90,12 +95,39 @@ async function saveContent(msg) {
   S.err = error ? 'Could not save: ' + error.message : ''; S.msg = error ? '' : (msg || 'Saved.');
 }
 let engTimer = null;
+/* Several devices can be open at once. Before saving, we read what the other devices saved and merge: nothing is lost, an approved or declined message beats a waiting draft. */
+const INITIAL = { draft: 1, waiting: 1, undefined: 1 };
+function pickItem(r, l) { if (!r) return l; if (!l) return r; const li = INITIAL[l.status], ri = INITIAL[r.status]; const w = (!li || ri) ? l : r; if (r.stop || l.stop) w.stop = true; return w; }
+function unionById(rem, loc) { const m = new Map(); (rem || []).forEach(x => m.set(x.id, x)); (loc || []).forEach(x => m.set(x.id, pickItem(m.get(x.id), x))); return [...m.values()]; }
+function mergeEng(local, remote, dirty) {
+  dirty = dirty || {};
+  const r = E.normalize(remote), l = local, out = Object.assign({}, r);
+  ['leads', 'test', 'waitlist'].forEach(k => { out[k] = unionById(r[k], l[k]); });
+  const ob = unionById(r.outbox, l.outbox), seen = new Map();
+  ob.forEach(m => { const k = m.key; if (!k) { seen.set(m.id, m); return; } const o = seen.get('k|' + k); seen.set('k|' + k, o ? pickItem(o, m) : m); });
+  out.outbox = [...seen.values()];
+  out.stops = Object.assign({}, r.stops, l.stops); out.noshows = Object.assign({}, r.noshows, l.noshows);
+  out.msg = l.msg || r.msg; out.lastCheck = Math.max(+l.lastCheck || 0, +r.lastCheck || 0);
+  if (dirty.auto) out.auto = l.auto;
+  Object.keys(dirty).forEach(k => { if (k.startsWith('on.')) out.on[k.slice(3)] = l.on[k.slice(3)]; });
+  if (dirty.sim) out.sim = l.sim;
+  return out;
+}
+S.dirty = {};
 function engSave() {
   clearTimeout(engTimer);
   engTimer = setTimeout(async () => {
+    engTimer = null;
+    const dirty = S.dirty; S.dirty = {}; const replace = S.replaceEng; S.replaceEng = false;
+    if (!replace) { const { data: cur } = await sb.from('engine_state').select('data').eq('shop_id', S.shop.id).maybeSingle(); if (cur && cur.data) S.eng = mergeEng(S.eng, cur.data, dirty); }
     const { error } = await sb.from('engine_state').update({ data: S.eng, updated_at: new Date().toISOString() }).eq('shop_id', S.shop.id);
     if (error) { S.err = 'Could not save automations: ' + error.message; render(); }
   }, 500);
+}
+async function engRefresh() {
+  if (!S.shop || engTimer || Object.keys(S.dirty).length) return;
+  const { data: cur } = await sb.from('engine_state').select('data').eq('shop_id', S.shop.id).maybeSingle();
+  if (cur && cur.data && !engTimer) S.eng = mergeEng(S.eng, cur.data, false);
 }
 const shopForEngine = () => ({ name: S.shop.name, address: S.content.address, winDays: 42, hours: S.content.hours, slotMins: 30 });
 /* the Engine checks by itself: on open, every minute, and whenever bookings change. Safe to repeat. */
@@ -110,8 +142,10 @@ function engAuto(rerender) {
 /* ---------------- boot ---------------- */
 sb.auth.onAuthStateChange((ev) => { if (ev === 'PASSWORD_RECOVERY') { S.recovery = true; render(); } });
 async function boot() {
-  const { data: { session } } = await sb.auth.getSession();
+  let { data: { session } } = await sb.auth.getSession();
+  if (session && sessionExpired()) { try { await sb.auth.signOut(); } catch (e) {} session = null; }
   if (!session) { S.user = null; return render(); }
+  touchAct();
   S.user = session.user;
   const { data: p } = await sb.from('profiles').select('role,shop_id').eq('id', S.user.id).maybeSingle();
   if (!p) { S.noAccess = 'This login is not connected to a shop. Ask your provider.'; return render(); }
@@ -358,6 +392,7 @@ function viewAccount() {
     <div class="err" role="alert">${esc(S.err)}</div><div class="status">${esc(S.msg)}</div><div class="row"><button class="btn small" type="submit">Save password</button></div></form>
   <form class="card" id="emForm"><h4>Change email</h4><div class="form2"><label class="l">New email<input type="email" id="nem" maxlength="120" required></label><label class="l">Current password<input type="password" id="epw" autocomplete="current-password" maxlength="100" required></label></div>
     <p class="fine">We email the new address to confirm the change.</p><div class="row"><button class="btn small" type="submit">Change email</button></div></form>
+  <div class="card"><h4>Signed in on devices</h4><p class="fine">You can be signed in on several phones and computers at once. On a shared device, choose Log out. If a phone is lost, use Sign out everywhere, then sign in again on your own devices.</p><div class="row"><button class="btn ghost small" type="button" data-a="logout">Log out of this device</button><button class="btn small" type="button" data-a="logoutAll">Sign out everywhere</button></div></div>
   <div class="card"><h4>Help</h4><p><a href="guide.html">How to use this panel</a> &middot; <a href="legal.html">Terms and privacy</a></p></div>`;
 }
 function loginView() {
@@ -382,7 +417,7 @@ function render() {
   if (!S.asAdmin && !live('ai') && !live('site')) { app.innerHTML = suspended(); return; }
   const v = { today: viewToday, appointments: viewAppointments, inbox: viewInbox, automations: viewAutomations, customers: viewCustomers, team: viewTeam, website: viewWebsite, help: viewHelp, account: viewAccount };
   if (!tabs().includes(S.tab)) S.tab = firstTab();
-  app.innerHTML = shell(v[S.tab]());
+  app.innerHTML = shell(v[S.tab]()) + gateHtml();
   if (keep) { const el = document.getElementById(keep); if (el) el.focus(); }
 }
 
@@ -394,10 +429,16 @@ async function updateBooking(id, patch) {
   const b = S.bookings.find(x => x.id === id); if (b) Object.assign(b, patch);
   S.err = ''; engAuto(false);
 }
+/* Sensitive actions need the password once per visit: right after you type it to sign in, nothing more is asked. Only a restored (kept) sign-in asks once, then stays good for 12 hours. Turning something OFF never asks. */
+const PW_MS = 12 * 3600 * 1000;
+const needsPw = el => { if (S.asAdmin || Date.now() - (S.pwOk || 0) < PW_MS) return false; const a = el.dataset.a; if (a === 'approve') return true; if (a === 'auto') return !S.eng.auto; if (a === 'ton') return !S.eng.on[el.dataset.k]; return false; };
+const gateHtml = () => S.gate ? `<div class="gateBg"><form class="card gateBox" id="gateForm"><h4>Confirm it is you</h4><p class="fine">Please type your password to continue. You will not be asked again for 12 hours.</p><label class="l">Password<input type="password" id="gpw" autocomplete="current-password" maxlength="100" required></label><div class="err" role="alert">${esc(S.gateErr || '')}</div><div class="row"><button class="btn small" type="submit">Continue</button><button class="btn ghost small" type="button" data-a="gatecancel">Cancel</button></div></form></div>` : '';
 const ACT = {
+  gatecancel: () => { S.gate = null; },
+  logoutAll: async () => { await sb.auth.signOut({ scope: 'global' }); lsSet('leo_act', null); location.reload(); },
   menu: () => { S.menu = !S.menu; },
   closemenu: () => { S.menu = false; },
-  logout: async () => { await sb.auth.signOut(); location.reload(); },
+  logout: async () => { await sb.auth.signOut(); lsSet('leo_act', null); location.reload(); },
   forgot: async () => {
     const em = ($('#em') || {}).value || ''; S.em = em; S.loginErr = ''; S.info = '';
     if (!/^\S+@\S+\.\S+$/.test(em)) { S.loginErr = 'Type your email above first, then press "Forgot password?".'; return; }
@@ -460,10 +501,10 @@ const ACT = {
     document.querySelectorAll('[data-soc]').forEach(i => { const k = i.dataset.soc, s = S.content.socials[k] || (S.content.socials[k] = { on: false, url: '' }); s.url = i.value.trim().slice(0, 200); });
     await saveContent('Saved. Your website is updated.');
   },
-  ton: (_, el) => { S.eng.on[el.dataset.k] = !S.eng.on[el.dataset.k]; engAuto(false); engSave(); },
-  auto: () => { S.eng.auto = !S.eng.auto; if (S.eng.auto) { engAuto(false); } engSave(); },
-  previewDay: () => { S.eng.sim++; const today = E.dayNum(todayIso()) + S.eng.sim; const [m, b] = E.runFor(S.eng, S.bookings, shopForEngine(), today); S.eng.msg = `Preview of ${niceDate(E.dayIso(today))}: ${m} drafted, ${b} blocked by the rules.`; engSave(); },
-  resetEng: () => { S.eng.sim = 0; S.eng.outbox = []; S.eng.stops = {}; S.eng.msg = 'Practice data reset to today.'; engSave(); },
+  ton: (_, el) => { S.dirty['on.' + el.dataset.k] = 1; S.eng.on[el.dataset.k] = !S.eng.on[el.dataset.k]; engAuto(false); engSave(); },
+  auto: () => { S.dirty.auto = 1; S.eng.auto = !S.eng.auto; if (S.eng.auto) { engAuto(false); } engSave(); },
+  previewDay: () => { S.dirty.sim = 1; S.eng.sim++; const today = E.dayNum(todayIso()) + S.eng.sim; const [m, b] = E.runFor(S.eng, S.bookings, shopForEngine(), today); S.eng.msg = `Preview of ${niceDate(E.dayIso(today))}: ${m} drafted, ${b} blocked by the rules.`; engSave(); },
+  resetEng: () => { S.dirty.sim = 1; S.replaceEng = true; S.eng.sim = 0; S.eng.outbox = []; S.eng.stops = {}; S.eng.msg = 'Practice data reset to today.'; engSave(); },
   approve: () => { const n = E.decide(S.eng, 'released'); S.eng.msg = `${n} drafts approved (practice run, nothing was sent).`; engSave(); },
   declineAll: () => { const n = E.decide(S.eng, 'declined'); S.eng.msg = `${n} drafts declined.`; engSave(); },
   stop: (_, el) => { const c = E.stop(S.eng, S.bookings, el.dataset.id); if (c) { S.eng.msg = c.name + ' replied STOP. No more messages to them.'; engSave(); } },
@@ -476,6 +517,7 @@ document.addEventListener('click', async ev => {
   if (tb) { S.tab = tb.dataset.tab; S.err = ''; S.msg = ''; S.menu = false; if (S.tab === 'help' && !S.asAdmin) { loadTickets().then(() => { lsSet(seenKey(), String(Date.now())); render(); }); } render(); window.scrollTo(0, 0); return; }
   const el = ev.target.closest('[data-a]'); if (!el) return;
   const fn = ACT[el.dataset.a]; if (!fn) return;
+  if (needsPw(el)) { S.gate = { a: el.dataset.a, k: el.dataset.k || '' }; S.gateErr = ''; render(); const gi = document.getElementById('gpw'); if (gi) gi.focus(); return; }
   el.disabled = true;
   try { await fn(ev, el); } catch (e) { S.err = String(e.message || e); }
   render();
@@ -492,10 +534,18 @@ document.addEventListener('input', ev => {
 document.addEventListener('change', ev => { const t = ev.target, k = t.dataset && t.dataset.f; if (!k) return; S.form[k] = formVal(t); if (k === 'date') S.form.barber = ''; if (['date', 'barber', 'time', 'end', 'service'].includes(k)) render(); });
 document.addEventListener('submit', async ev => {
   ev.preventDefault(); const id = ev.target.id;
+  if (id === 'gateForm') {
+    const { error } = await sb.auth.signInWithPassword({ email: S.user.email, password: $('#gpw').value });
+    if (error) { S.gateErr = 'That password did not match.'; return render(); }
+    S.pwOk = Date.now(); touchAct(); const g = S.gate; S.gate = null;
+    const fn = ACT[g.a]; if (fn) { try { await fn(ev, { dataset: { k: g.k } }); } catch (e) { S.err = String(e.message || e); } }
+    return render();
+  }
   if (id === 'loginForm') {
     S.busy = true; S.loginErr = ''; S.info = ''; S.em = $('#em').value.trim();
     { const rm = $('#rem').checked, kp = $('#keep').checked; lsSet('leo_keep', kp ? '1' : '0'); if (rm) lsSet('leo_email', S.em); else lsSet('leo_email', null); S.remember = rm; S.keep = kp; }
     const { error } = await sb.auth.signInWithPassword({ email: $('#em').value.trim(), password: $('#pw').value });
+    if (!error) { lsSet('leo_login', String(Date.now())); touchAct(); S.pwOk = Date.now(); }
     S.busy = false;
     if (error) { S.loginErr = 'That email and password did not match.'; return render(); }
     await boot();
@@ -503,7 +553,7 @@ document.addEventListener('submit', async ev => {
     const pw = $('#rpw').value; if (pw.length < 10) { S.loginErr = 'Use at least 10 characters.'; return render(); }
     const { error } = await sb.auth.updateUser({ password: pw });
     if (error) { S.loginErr = error.message; return render(); }
-    S.recovery = false; await boot();
+    S.recovery = false; lsSet('leo_login', String(Date.now())); touchAct(); S.pwOk = Date.now(); await boot();
   } else if (id === 'ticketForm') {
     S.err = ''; S.msg = '';
     const subject = $('#tSub').value.trim(), body = $('#tBody').value.trim();
@@ -531,7 +581,12 @@ document.addEventListener('submit', async ev => {
     render();
   }
 });
-setInterval(() => { if (S.shop && document.visibilityState === 'visible') Promise.all([reloadBookings(), loadTickets()]).then(() => { if (!document.activeElement || !/INPUT|SELECT/.test(document.activeElement.tagName)) render(); }); }, 45000);
+let lastTouch = 0;
+['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(t => document.addEventListener(t, () => { const n = Date.now(); if (S.user && n - lastTouch > 20000) { lastTouch = n; touchAct(); } }, { passive: true }));
+const idleCheck = async () => { if (S.user && sessionExpired()) { try { await sb.auth.signOut(); } catch (e) {} location.reload(); } };
+setInterval(idleCheck, 30000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') idleCheck(); });
+setInterval(() => { if (S.shop && document.visibilityState === 'visible') Promise.all([engRefresh(), reloadBookings(), loadTickets()]).then(() => { if (!document.activeElement || !/INPUT|SELECT/.test(document.activeElement.tagName)) render(); }); }, 45000);
 boot().catch(e => { app.innerHTML = '<div class="login"><div class="card"><p>Something went wrong loading the panel: ' + esc(e.message || e) + '</p></div></div>'; });
 </script>
 </body>
