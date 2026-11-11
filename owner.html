@@ -97,7 +97,7 @@ function engSave() {
     if (error) { S.err = 'Could not save automations: ' + error.message; render(); }
   }, 500);
 }
-const shopForEngine = () => ({ name: S.shop.name, address: S.content.address, winDays: 42 });
+const shopForEngine = () => ({ name: S.shop.name, address: S.content.address, winDays: 42, hours: S.content.hours, slotMins: 30 });
 /* the Engine checks by itself: on open, every minute, and whenever bookings change. Safe to repeat. */
 function engAuto(rerender) {
   if (!S.shop || !S.eng || !(live('ai') || S.asAdmin && has('ai'))) return;
@@ -159,7 +159,7 @@ const toHHMM = m => m == null || m === '' ? '' : String(Math.floor(m / 60)).padS
 const rangeLabel = b => E.tLabel(b.time) + (b.end_time ? ' \u2013 ' + E.tLabel(b.end_time) : '');
 const durOf = b => b.end_time ? b.end_time - b.time : ((S.content.services.find(x => x.name === b.service) || {}).mins || 30);
 const overlapsWith = (date, barber, start, end) => S.bookings.filter(b => b.status === 'accepted' && b.date === date && b.barber === barber && start < b.time + durOf(b) && b.time < end);
-const apptRow = b => `<div class="ap"><div><b>${rangeLabel(b)}</b> <span>${esc(b.name)}</span><small>${esc(b.service || '')}${b.barber ? ' with ' + esc(b.barber) : ''}${b.source === 'owner' ? ' · added by you' : ''}</small></div><button type="button" class="link" data-a="cancel" data-id="${esc(b.id)}">Cancel</button></div>`;
+const apptRow = b => `<div class="ap"><div><b>${rangeLabel(b)}</b> <span>${esc(b.name)}</span><small>${esc(b.service || '')}${b.barber ? ' with ' + esc(b.barber) : ''}${b.source === 'owner' ? ' · added by you' : ''}</small></div><span class="row">${b.date <= todayIso() && !(S.eng && S.eng.noshows && S.eng.noshows[b.id] != null) ? `<button type="button" class="link" data-a="noshow" data-id="${esc(b.id)}">No-show</button>` : ''}${S.eng && S.eng.noshows && S.eng.noshows[b.id] != null ? '<small>No-show noted</small>' : ''}<button type="button" class="link" data-a="cancel" data-id="${esc(b.id)}">Cancel</button></span></div>`;
 const teamOn = date => S.content.team.filter(b => !b.away && b.days[dow(date)]);
 function slotsFor(date) {
   const h = S.content.hours; if (!date || !h.days[dow(date)]) return [];
@@ -283,6 +283,10 @@ function viewWebsite() {
   <div class="err" role="alert">${esc(S.err)}</div><div class="status" role="status">${esc(S.msg)}</div>`;
 }
 const msgBox = m => `<div class="eng-msg ${m.status}"><div class="h"><span>${esc(E.KINDS[m.kind])} to ${esc(m.to)}</span><span>${niceDate(E.dayIso(m.day))}${m.status === 'released' ? ' · approved (practice)' : ''}</span></div><div class="t">${esc(m.text)}</div>${m.reason ? `<div class="why">Blocked: ${esc(m.reason)}</div>` : ''}</div>`;
+function replyPeople() {
+  const cs = E.contacts(S.eng, S.bookings).concat(S.eng.waitlist);
+  return cs.length ? cs.map(c => `<option value="${esc(c.id)}">${esc(c.name)}${c.id.startsWith('wl') ? ' (waitlist)' : ''}</option>`).join('') : '<option value="">(no customers yet)</option>';
+}
 function viewAutomations() {
   const st = S.eng, drafts = st.outbox.filter(m => m.status === 'draft'), bl = st.outbox.filter(m => m.status === 'blocked'), rel = st.outbox.filter(m => m.status === 'released');
   const rows = Object.keys(E.KINDS).map(k => { const n = st.outbox.filter(m => m.kind === k && m.status !== 'blocked').length, on = st.on[k]; return `<div class="autorow"><div><b>${E.INFO[k][0]}</b><small>${E.INFO[k][1]}</small><em>${on ? n + ' drafted so far' : 'Paused'}</em></div><button type="button" class="sw" role="switch" aria-checked="${on}" aria-label="${(on ? 'Turn off ' : 'Turn on ') + E.INFO[k][0]}" data-a="ton" data-k="${k}"><i></i></button></div>`; }).join('');
@@ -295,6 +299,14 @@ function viewAutomations() {
   <div class="card"><div><div class="row" style="justify-content:space-between"><h4>Waiting for your OK</h4><span class="dry">${drafts.length} message${drafts.length === 1 ? '' : 's'}</span></div><p class="fine">While you are getting to know the system, every new batch of messages stops here first.</p></div>${drafts.length ? drafts.slice(-8).map(msgBox).join('') : '<p>No drafts. Accept an appointment in Requests and the Engine writes what is due by itself.</p>'}
     ${drafts.length ? `<div class="row"><button class="btn small" type="button" data-a="approve">Approve all ${drafts.length}</button><button class="btn ghost small" type="button" data-a="declineAll">Decline all</button></div>` : ''}</div>
   <div class="card"><h4>Your automations</h4>${rows}</div></div>
+  <div class="two">
+  <div class="card"><div><h4>Try a customer reply</h4><p class="fine">Practice: type what a customer might text back. A rating like 5 or 2, a question like "Thursday morning?", or YES to a waitlist offer. The system drafts the answer and waits for your OK.</p></div>
+    <div class="form2"><label class="l">Customer<select id="rc">${replyPeople()}</select></label><label class="l">Their reply<input type="text" id="rt" maxlength="200" placeholder="Thursday morning?"></label></div>
+    <div class="row"><button class="btn small" type="button" data-a="simreply">Run this reply</button></div></div>
+  <div class="card"><div><h4>Waitlist</h4><p class="fine">People waiting for an earlier time. When you cancel an appointment, the first person gets an offer that waits for your OK.</p></div>
+    ${st.waitlist.length ? st.waitlist.map(w => `<div class="ap"><div><b>${esc(w.name)}</b><small>${w.status === 'waiting' ? 'Waiting' : w.status === 'offered' ? 'Offered ' + esc(E.niceDay(E.dayNum(w.offered.date))) + ' at ' + E.tLabel(w.offered.time) : 'Said yes'}${w.service ? ' · ' + esc(w.service) : ''}</small></div></div>`).join('') : '<p>Nobody on the waitlist.</p>'}
+    <div class="form2"><label class="l">Name<input type="text" id="wn" maxlength="24" placeholder="First name"></label><label class="l">Phone<input type="tel" id="wp" maxlength="20" placeholder="905 555 0100"></label><label class="l">Service (optional)<input type="text" id="ws" maxlength="60" placeholder="Fade"></label></div>
+    <div class="row"><button class="btn small" type="button" data-a="addwl">Add to waitlist</button></div></div></div>
   <div class="card"><h4>Approved (${rel.length})</h4><p class="fine">Ready to go out. In this practice run nothing is actually sent.</p>${rel.length ? rel.slice(-5).reverse().map(msgBox).join('') : '<p>Nothing approved yet.</p>'}</div>
   <div class="card"><h4>Stopped by the rules (${bl.length})</h4><p class="fine">Messages the consent rules blocked, so nothing illegal goes out.</p>${bl.length ? bl.slice(-6).map(msgBox).join('') : '<p>Nothing blocked yet.</p>'}</div>`;
 }
@@ -401,7 +413,19 @@ const ACT = {
     await updateBooking(id, patch);
   },
   decline: async (_, el) => { await updateBooking(el.dataset.id, { status: 'declined' }); },
-  cancel: async (_, el) => { await updateBooking(el.dataset.id, { status: 'cancelled' }); },
+  cancel: async (_, el) => {
+    const id = el.dataset.id, b = S.bookings.find(x => x.id === id);
+    await updateBooking(id, { status: 'cancelled' });
+    if (b && S.eng && live('ai')) { const today = E.dayNum(todayIso()) + S.eng.sim, m = E.offerSlot(S.eng, shopForEngine(), today, { date: b.date, time: b.time }); if (m) { S.eng.msg = 'Slot opened. An offer to ' + m.to + ' is waiting for your OK in Automations.'; engSave(); } }
+  },
+  noshow: async (_, el) => { const today = E.dayNum(todayIso()) + S.eng.sim; if (E.markNoShow(S.eng, S.bookings, el.dataset.id, today)) { engAuto(false); S.eng.msg = 'Marked as a no-show. A rebook text is waiting for your OK in Automations.'; engSave(); } },
+  addwl: () => { const n = ($('#wn').value || '').trim(), today = E.dayNum(todayIso()) + S.eng.sim; if (!n) return err('Type the customer name.'); E.addWaitlist(S.eng, today, n, $('#wp').value, $('#ws').value); S.eng.msg = n + ' is on the waitlist.'; engSave(); },
+  simreply: () => {
+    const today = E.dayNum(todayIso()) + S.eng.sim, id = $('#rc').value, text = $('#rt').value.trim(); if (!id || !text) return err('Pick a customer and type their reply.');
+    const r = E.handleReply(S.eng, S.bookings, shopForEngine(), today, id, text, S.eng.sim ? 0 : new Date().getHours() * 60 + new Date().getMinutes());
+    const say = { happy: 'Happy rating. A review request is waiting for your OK.', unhappy: 'Unhappy rating. It came to you first and no review link was drafted.', options: 'Open times found. A reply is waiting for your OK.', pick: 'They picked a free time. A confirmation is waiting for your OK. Add the appointment in Appointments.', 'no-slots': 'Nothing is open then. A reply asking for another time is waiting for your OK.', 'waitlist-yes': 'They said YES to the open slot. Add the appointment in Appointments.', stop: 'STOP noted. No more messages to them.', other: 'Nothing for the system to do with that reply.', unknown: 'Customer not found.' };
+    S.eng.msg = say[r.type] || ''; engSave();
+  },
   addAppt: async () => {
     document.querySelectorAll('[data-f]').forEach(i => { S.form[i.dataset.f] = formVal(i); });
     const f = S.form, svc = S.content.services[+f.service] || null, digits = String(f.phone).replace(/\D/g, '');
