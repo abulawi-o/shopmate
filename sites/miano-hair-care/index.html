@@ -203,6 +203,18 @@ body{font-variant-numeric:lining-nums;font-feature-settings:'lnum' 1}
 .hero h1{line-height:0;margin:0}
 .hl{width:min(82vw,520px);height:auto;display:block;margin-left:-10px}
 @media(max-width:760px){.logo img{height:40px}}
+/* phone sizing fix */
+@media(max-width:600px){
+.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stat{padding:16px 14px}
+.stat b{font-size:34px}
+.stat span{font-size:11px;letter-spacing:.14em}
+.visit{grid-template-columns:1fr;gap:10px}
+.vbox{padding:16px 18px}
+.vbox h3{font-size:20px;margin:0 0 6px}
+.vbox .num{font-size:22px}
+.vbox p{font-size:15px}
+}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="fixLogo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 -1.064 0 1  0 1 -1.064 0 1  0 0 -0.064 0 1  0 0 0 1 0"/></filter></svg>

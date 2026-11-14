@@ -163,6 +163,15 @@ input:focus,select:focus{outline:none;border-bottom-color:var(--brick)}
 :focus-visible{outline:3px solid var(--brick);outline-offset:3px}
 #socials{margin-right:0}
 @media(max-width:860px){#socials a{width:34px;height:34px}}
+/* phone sizing fix */
+@media(max-width:600px){
+.tile{min-height:0;padding:14px 16px;flex-direction:row;align-items:center;justify-content:space-between;gap:12px}
+.tile h3{font-size:19px}
+.tile .p{font-size:30px}
+.boards{gap:10px}
+.vbox{padding:16px 18px}
+.vbox p{font-size:19px}
+}
 </style></head><body>
 <header class="top">
   <nav aria-label="Sections"><a href="#services">Services</a><a href="#chairs">Barbers</a><a href="#gallery">Gallery</a><a href="#book">Book</a><a href="#visit">Visit</a></nav>

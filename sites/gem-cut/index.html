@@ -186,6 +186,25 @@ footer{border-top:1px solid var(--line);padding:34px 0 48px;margin-top:40px;disp
 .cfoot .btn{flex:1;min-height:44px}
 @media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}.tick div{animation:none}html{scroll-behavior:auto}}
 :focus-visible{outline:3px solid var(--brick);outline-offset:3px}
+/* phone sizing fix */
+@media(max-width:600px){
+.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stat{padding:16px 14px}
+.stat b{font-size:34px}
+.stat span{font-size:11px;letter-spacing:.14em}
+.visit{grid-template-columns:1fr;gap:10px}
+.vbox{padding:16px 18px}
+.vbox h3{font-size:20px;margin:0 0 6px}
+.vbox .num{font-size:22px}
+.vbox p{font-size:15px}
+.hero h1{font-size:clamp(52px,16vw,64px)}
+.hero h1 span{font-size:13px}
+h2{font-size:clamp(26px,8vw,32px);margin-bottom:14px}
+.item{padding:14px 0;gap:4px 16px}
+.item h3{font-size:19px}
+.item .p{font-size:19px}
+.item small{font-size:13px}
+}
 </style>
 
 <header class="nav">
