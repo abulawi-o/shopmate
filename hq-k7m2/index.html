@@ -26,7 +26,7 @@ const sb = supabase.createClient(LEO.url, LEO.key, { auth: { storage: authStore,
 const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const today = () => iso(new Date());
 const plusMonth = s => { const d = s ? new Date(s + 'T00:00:00') : new Date(); d.setMonth(d.getMonth() + 1); return iso(d); };
-const S = { user: null, shops: [], tickets: [], logins: {}, audit: [], err: '', msg: '', reveal: null, loginErr: '', busy: false, filter: '', em: '', eng: null, page: 'dashboard', menu: false, openId: null };
+const S = { user: null, shops: [], tickets: [], leads: [], logins: {}, audit: [], err: '', msg: '', reveal: null, loginErr: '', busy: false, filter: '', em: '', eng: null, page: 'dashboard', menu: false, openId: null };
 S.remember = !!lsGet('leo_email'); S.keep = lsGet('leo_keep') !== '0'; if (S.remember) S.em = lsGet('leo_email') || '';
 
 async function load() {
@@ -37,6 +37,7 @@ async function load() {
   ]);
   S.shops = sh.data || []; S.audit = au.data || [];
   try { const tk = await sb.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(100); S.tickets = tk.error ? [] : (tk.data || []); } catch (e) { S.tickets = []; }
+  try { const ld = await sb.from('leads').select('*').order('created_at', { ascending: false }).limit(200); S.leads = ld.error ? [] : (ld.data || []); } catch (e) { S.leads = []; }
   try { const es = await sb.rpc('engine_status'); S.eng = es.error ? null : es.data; } catch (e) { S.eng = null; }
   S.logins = {}; (pr.data || []).forEach(p => { S.logins[p.shop_id] = p.last_login; });
   if (sh.error) S.err = sh.error.message;
@@ -68,12 +69,13 @@ const msgs = () => (S.err ? `<div class="err" role="alert">${esc(S.err)}</div>` 
 const ICA = {
   dashboard: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
   clients: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 010 6.8M18 14.8c2 .6 3.2 2.3 3.5 5.2"/></svg>',
+  leads: '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12h5"/></svg>',
   add: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
   payments: '<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h3"/></svg>',
   support: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 114 2c-.9.6-1.6 1.1-1.6 2.1M12 17h.01"/></svg>',
   activity: '<svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>'
 };
-const PAGES = [['dashboard', 'Dashboard'], ['clients', 'Clients'], ['add', 'Add a client'], ['payments', 'Plans and payments'], ['support', 'Support'], ['activity', 'Activity']];
+const PAGES = [['dashboard', 'Dashboard'], ['leads', 'Leads'], ['clients', 'Clients'], ['add', 'Add a client'], ['payments', 'Plans and payments'], ['support', 'Support'], ['activity', 'Activity']];
 const state = (sh, k) => !sh['pkg_' + k] ? '<span class="fine">not included</span>' : sh['closed_' + k] ? '<span class="tag bad">closed</span>' : '<span class="tag">open</span>';
 
 function loginView() {
@@ -140,6 +142,7 @@ function pgPayments() {
   <div class="card"><h4>Overdue or due in the next 14 days</h4>${due.map(dueRow).join('') || '<p class="fine">Nothing is due in the next 14 days.</p>'}</div>
   <div class="card"><h4>All clients</h4><div class="scroll"><table class="sh"><thead><tr><th>Client</th><th>Plan</th><th>Last paid</th><th>Next due</th><th></th></tr></thead><tbody>${all.map(s => `<tr><td><b>${esc(s.name)}</b><br><small>${esc(s.owner_email)}</small></td><td>${planOf(s)}</td><td>${nice(s.paid_date)}</td><td><input type="date" data-due="${s.id}" value="${esc(s.due_date || '')}" style="min-height:34px;font-size:14px;max-width:150px"> ${dueTag(s)}</td><td><button class="btn ghost mini" data-a="paid" data-id="${s.id}">Mark paid</button></td></tr>`).join('') || '<tr><td colspan="5">No clients yet.</td></tr>'}</tbody></table></div></div>`;
 }
+const newLeads = () => S.leads.filter(l => l.status === 'new').length;
 const openTk = () => S.tickets.filter(t => t.status === 'open').length;
 function pgSupport() {
   const shopName = id => { const x = S.shops.find(s => s.id === id); return x ? x.name : 'Unknown shop'; };
@@ -155,12 +158,24 @@ function pgSupport() {
   <div class="cls2">${open.map(card).join('') || '<div class="card"><p class="fine">No open questions. Nice.</p></div>'}</div>
   ${rest.length ? `<div class="card"><h4>Answered and closed</h4>${rest.slice(0, 20).map(done).join('')}</div>` : ''}`;
 }
+function pgLeads() {
+  const when = t => new Date(t).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const KIND = { barber: 'Barbershop', salon: 'Salon', dental: 'Dental or clinic', other: 'Other' };
+  const fmt = p => { const d = String(p || '').replace(/\D/g, ''); return d.length === 10 ? `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}` : (d.length === 11 && d[0] === '1' ? `${d.slice(1, 4)} ${d.slice(4, 7)} ${d.slice(7)}` : p); };
+  const card = l => `<div class="cl"><div class="clh"><div style="min-width:0"><b>${esc(l.shop_name)}</b><small>${esc(l.name)} · ${esc(KIND[l.kind] || 'Other')} · ${when(l.created_at)}${l.status === 'new' ? '' : ' · ' + (l.status === 'contacted' ? 'contacted' : 'closed')}</small></div><span class="pw">${esc(fmt(l.phone))}</span></div>
+    <p class="fine" style="margin:6px 0 0">They ticked the box allowing you to contact them.</p>
+    <div class="row" style="gap:8px;margin-top:10px"><button class="btn ghost mini" data-a="copy" data-t="${esc(fmt(l.phone))}">Copy number</button>${l.status !== 'contacted' ? `<button class="btn mini" data-a="leadst" data-id="${esc(l.id)}" data-s="contacted">Mark contacted</button>` : ''}${l.status !== 'closed' ? `<button class="btn ghost mini" data-a="leadst" data-id="${esc(l.id)}" data-s="closed">Close</button>` : ''}${l.status !== 'new' ? `<button class="btn ghost mini" data-a="leadst" data-id="${esc(l.id)}" data-s="new">Back to new</button>` : ''}</div></div>`;
+  const fresh = S.leads.filter(l => l.status === 'new').slice().reverse(), rest = S.leads.filter(l => l.status !== 'new');
+  return `<div><h3>Leads</h3><p class="fine" style="margin:0">Shops that sent their details from the Shopmate home page. ${newLeads()} new.</p></div>${msgs()}
+  <div class="cls2">${fresh.map(card).join('') || '<div class="card"><p class="fine">No new requests yet.</p></div>'}</div>
+  ${rest.length ? `<div class="card"><h4>Already handled</h4><div class="cls2">${rest.slice(0, 30).map(card).join('')}</div></div>` : ''}`;
+}
 function pgActivity() { return `<div><h3>Activity</h3><p class="fine" style="margin:0">Everything you did inside a client's space or changed about a client.</p></div><div class="card">${actList(25)}</div>`; }
 function view() {
   const reveal = S.reveal ? `<div class="card" style="border-color:var(--accent)"><h4>${esc(S.reveal.title)}</h4><p>Email: <b>${esc(S.reveal.email)}</b></p><p>Password (shown once, copy it now):</p><div class="row"><span class="pw">${esc(S.reveal.pw)}</span></div><p class="fine">Send it to the owner when you are ready. Nothing was emailed. They can change it themselves after signing in.</p><div class="row"><button class="btn ghost small" data-a="hide">Done</button></div></div>` : '';
   const od = S.shops.filter(s => s.due_date && daysTo(s.due_date) < 0).length, open = !!S.menu;
-  const nav = PAGES.map(([k, n]) => `<button type="button" class="${S.page === k ? 'on' : ''}" data-a="page" data-p="${k}">${ICA[k]}<span>${n}</span>${k === 'payments' && od ? `<em>${od}</em>` : ''}${k === 'support' && openTk() ? `<em>${openTk()}</em>` : ''}</button>`).join('');
-  const body = { dashboard: pgDashboard, clients: pgClients, add: pgAdd, payments: pgPayments, support: pgSupport, activity: pgActivity }[S.page]();
+  const nav = PAGES.map(([k, n]) => `<button type="button" class="${S.page === k ? 'on' : ''}" data-a="page" data-p="${k}">${ICA[k]}<span>${n}</span>${k === 'payments' && od ? `<em>${od}</em>` : ''}${k === 'leads' && newLeads() ? `<em>${newLeads()}</em>` : ''}${k === 'support' && openTk() ? `<em>${openTk()}</em>` : ''}</button>`).join('');
+  const body = { dashboard: pgDashboard, leads: pgLeads, clients: pgClients, add: pgAdd, payments: pgPayments, support: pgSupport, activity: pgActivity }[S.page]();
   const pn = (PAGES.find(p => p[0] === S.page) || [])[1] || '';
   return `<header class="bar admbar"><button type="button" class="hbtn" data-a="menu" aria-label="Open menu" aria-expanded="${open}" aria-controls="drawer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>${od ? '<i class="dot"></i>' : ''}</button><div class="shopn"><img src="../mark.svg" alt="">Platform admin</div><span class="pg">${pn}</span></header>
   <div class="admshell"><nav class="side drawer admdrawer ${open ? 'open' : ''}" id="drawer" aria-label="Main"><div class="dtop"><div class="brand2" style="padding-bottom:14px">Platform admin</div><button type="button" class="x" data-a="closemenu" aria-label="Close menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>${nav}<div class="note">Signed in as ${esc(S.user.email)}</div><div class="links"><a href="../legal.html">Terms and privacy</a></div><button type="button" class="out" data-a="logout">Log out</button></nav>${open ? '<div class="scrim" data-a="closemenu"></div>' : ''}
@@ -191,6 +206,11 @@ const ACT = {
     const { error } = await sb.from('support_tickets').update({ admin_reply: txt.slice(0, 1500), status: 'answered', replied_at: new Date().toISOString() }).eq('id', id);
     if (error) { S.err = 'Could not send: ' + error.message; return; }
     await audit(t ? t.shop_id : null, 'answered a support question'); S.err = ''; S.msg = 'Answer sent.'; await load();
+  },
+  leadst: async el => {
+    const { error } = await sb.from('leads').update({ status: el.dataset.s }).eq('id', el.dataset.id);
+    if (error) { S.err = error.message; return; }
+    S.err = ''; await load();
   },
   closeTk: async el => {
     const id = el.dataset.id, t = S.tickets.find(x => x.id === id);
