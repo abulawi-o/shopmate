@@ -25,9 +25,9 @@
     unhappy: ['Unhappy-customer catch', 'A low rating comes to you first. No review link is sent to that customer.']
   };
 
-  const fresh = () => ({ on: { review: true, reminder: true, missed: true, inquiry: true, winback: true, digest: true, noshow: true, waitlist: true, replybook: true, unhappy: true }, outbox: [], stops: {}, leads: [], test: [], waitlist: [], noshows: {}, auto: false, sim: 0, lastCheck: 0, msg: '' });
+  const fresh = () => ({ on: { review: true, reminder: true, missed: true, inquiry: true, winback: true, digest: true, noshow: true, waitlist: true, replybook: true, unhappy: true }, outbox: [], stops: {}, leads: [], test: [], waitlist: [], noshows: {}, notes: {}, auto: false, sim: 0, lastCheck: 0, msg: '' });
   // fill anything missing in saved state (older or empty rows)
-  const normalize = d => { const f = fresh(), o = Object.assign(f, d || {}); o.on = Object.assign({}, fresh().on, (d && d.on) || {}); ['outbox', 'leads', 'test', 'waitlist'].forEach(k => { if (!Array.isArray(o[k])) o[k] = []; }); if (!o.stops || typeof o.stops !== 'object') o.stops = {}; if (!o.noshows || typeof o.noshows !== 'object') o.noshows = {}; return o; };
+  const normalize = d => { const f = fresh(), o = Object.assign(f, d || {}); o.on = Object.assign({}, fresh().on, (d && d.on) || {}); ['outbox', 'leads', 'test', 'waitlist'].forEach(k => { if (!Array.isArray(o[k])) o[k] = []; }); if (!o.stops || typeof o.stops !== 'object') o.stops = {}; if (!o.noshows || typeof o.noshows !== 'object') o.noshows = {}; if (!o.notes || typeof o.notes !== 'object') o.notes = {}; return o; };
 
   function contacts(st, bookings) {
     const fromB = bookings.filter(b => b.status === 'accepted').map(b => {
@@ -46,7 +46,7 @@
   function makeText(kind, variant, c, shop) {
     const n = c.name, b = shop.name, t = c.apptTime; let body;
     if (kind === 'review') body = variant === 'link' ? 'Hi ' + n + ', thank you! If you have a minute, a quick Google review helps us a lot: [review link]' : variant === 'apology' ? 'Hi ' + n + ', thank you for telling us, and I am sorry your visit at ' + b + ' was not right. May I call you to make it right?' : variant === 'nudge' ? 'Hi ' + n + ', quick check on your visit to ' + b + ': how was it, from 1 to 5? Just reply with a number.' : 'Hi ' + n + ', thanks for visiting ' + b + '. How was your visit, from 1 to 5? Just reply with a number.';
-    else if (kind === 'reminder') body = variant === '2h' ? 'Hi ' + n + ', see you today at ' + t + (c.barber ? ' with ' + c.barber : '') + ' at ' + b + '. Reply C to confirm or X to cancel.' : 'Hi ' + n + ', a reminder of your appointment at ' + b + ' tomorrow at ' + t + (c.barber ? ' with ' + c.barber : '') + '. Reply C to confirm or X to cancel.';
+    else if (kind === 'reminder') body = variant === '2h' ? 'Hi ' + n + ', see you today at ' + t + (c.barber ? ' with ' + c.barber : '') + ' at ' + b + '. Reply C to confirm. Change or cancel: [manage link]' : 'Hi ' + n + ', a reminder of your appointment at ' + b + ' tomorrow at ' + t + (c.barber ? ' with ' + c.barber : '') + '. Reply C to confirm. Change or cancel: [manage link]';
     else if (kind === 'missed') body = 'Hi, sorry we missed your call at ' + b + '. Book online here: [booking link] or reply with a good time.';
     else if (kind === 'noshow') body = 'Hi ' + n + ', we missed you at your appointment at ' + b + (t ? ' (' + t + ')' : '') + '. No problem, things happen. Want to book a new time? [booking link]';
     else if (kind === 'inquiry') body = variant === 'followup' ? 'Hi ' + n + ', just checking in about your inquiry at ' + b + '. Can we help you pick a time? [booking link]' : 'Hi ' + n + ', thanks for contacting ' + b + '. We got your message and will reply shortly. You can also book here: [booking link]';
@@ -225,6 +225,42 @@
     return { type: 'other' };
   }
 
-  const api = { iso, fromIso, dayNum, dayIso, tLabel, KINDS, INFO, fresh, normalize, contacts, consentCheck, makeText, runFor, decide, stop, addLead, addTest, digestFor, markNoShow, addWaitlist, offerSlot, handleReply, freeSlots, niceDay };
+
+  /* Client profiles: one card per real person (matched by phone number, else by first name), built only from accepted bookings.
+     Notes are the owner's own words ("usual: skin fade, number 2") and are kept in the shop's saved settings, no new database table. */
+  const pkey = b => { const d = String(b.phone || '').replace(/\D/g, ''); return d.length >= 7 ? d : 'n:' + String(b.name || '').trim().toLowerCase(); };
+  function profiles(st, bookings, today) {
+    const map = new Map();
+    bookings.filter(b => b.status === 'accepted').forEach(b => {
+      const k = pkey(b), d = dayNum(b.date); let p = map.get(k);
+      if (!p) { p = { key: k, name: b.name, phone: k.startsWith('n:') ? '' : k, visits: [], upcoming: [], noshows: 0, stop: !!st.stops[k], consent: false, note: '', noteAt: 0 }; map.set(k, p); }
+      const nsd = st.noshows && st.noshows[b.id] != null;
+      const row = { id: b.id, date: b.date, day: d, time: b.time, service: b.service || '', barber: b.barber && b.barber !== 'Anyone' ? b.barber : '', noshow: nsd };
+      if (nsd) p.noshows++;
+      if (d >= today && !nsd) p.upcoming.push(row); else if (!nsd) p.visits.push(row);
+      if (b.consent) p.consent = true;
+      if (b.created_at && b.name) p.name = b.name;
+    });
+    const out = [...map.values()].map(p => {
+      p.visits.sort((a, b) => b.day - a.day || b.time - a.time); p.upcoming.sort((a, b) => a.day - b.day || a.time - b.time);
+      const n = st.notes && st.notes[p.key]; if (n) { p.note = n.text || ''; p.noteAt = n.at || 0; }
+      const cnt = {}; p.visits.concat(p.upcoming).forEach(v => { if (v.service) cnt[v.service] = (cnt[v.service] || 0) + 1; });
+      const top = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0]; p.usual = top || '';
+      const bc = {}; p.visits.concat(p.upcoming).forEach(v => { if (v.barber) bc[v.barber] = (bc[v.barber] || 0) + 1; });
+      p.usualBarber = Object.keys(bc).sort((a, b) => bc[b] - bc[a])[0] || '';
+      p.last = p.visits[0] || null; p.next = p.upcoming[0] || null; p.count = p.visits.length + p.upcoming.length; p.since = p.visits.length ? p.visits[p.visits.length - 1].date : '';
+      return p;
+    });
+    out.sort((a, b) => (a.next ? 0 : 1) - (b.next ? 0 : 1) || ((b.last ? b.last.day : -1e9) - (a.last ? a.last.day : -1e9)) || a.name.localeCompare(b.name));
+    return out;
+  }
+  function setNote(st, key, text, nowMs) {
+    text = String(text || '').trim().slice(0, 500);
+    if (!st.notes) st.notes = {};
+    if (!text) { delete st.notes[key]; return null; }
+    st.notes[key] = { text, at: nowMs || Date.now() }; return st.notes[key];
+  }
+
+  const api = { profiles, setNote, pkey, iso, fromIso, dayNum, dayIso, tLabel, KINDS, INFO, fresh, normalize, contacts, consentCheck, makeText, runFor, decide, stop, addLead, addTest, digestFor, markNoShow, addWaitlist, offerSlot, handleReply, freeSlots, niceDay };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Engine = api;
 })(typeof window !== 'undefined' ? window : globalThis);

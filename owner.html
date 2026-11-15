@@ -136,6 +136,7 @@ function mergeEng(local, remote, dirty) {
   ob.forEach(m => { const k = m.key; if (!k) { seen.set(m.id, m); return; } const o = seen.get('k|' + k); seen.set('k|' + k, o ? pickItem(o, m) : m); });
   out.outbox = [...seen.values()];
   out.stops = Object.assign({}, r.stops, l.stops); out.noshows = Object.assign({}, r.noshows, l.noshows);
+  out.notes = Object.assign({}, r.notes); Object.keys(l.notes || {}).forEach(k => { if (!out.notes[k] || (l.notes[k].at || 0) >= (out.notes[k].at || 0)) out.notes[k] = l.notes[k]; }); Object.keys(dirty).forEach(k => { if (k.startsWith('del.')) delete out.notes[k.slice(4)]; });
   out.msg = l.msg || r.msg; out.lastCheck = Math.max(+l.lastCheck || 0, +r.lastCheck || 0);
   if (dirty.auto) out.auto = l.auto;
   Object.keys(dirty).forEach(k => { if (k.startsWith('on.')) out.on[k.slice(3)] = l.on[k.slice(3)]; });
@@ -270,12 +271,14 @@ function viewToday() {
   <div class="grid2"><div class="card"><h4>Recent activity</h4>${act}</div>
   <div class="card"><h4>What the system drafted</h4><div class="act"><span class="av">${kc('reminder')}</span><div><b>Appointment reminders</b><small>24 hours and 2 hours before</small></div></div><div class="act"><span class="av">${kc('missed') + kc('inquiry')}</span><div><b>Missed calls and inquiries</b><small>text-backs and follow-ups</small></div></div><div class="act"><span class="av">${kc('winback')}</span><div><b>Win-back notes</b><small>customers not seen in 6 weeks</small></div></div></div></div>`;
 }
+const oldOf = b => { if (!b.replaces) return null; const o = S.bookings.find(x => x.id === b.replaces && x.status === 'accepted'); return o && String(o.phone).replace(/\D/g, '') === String(b.phone).replace(/\D/g, '') ? o : null; };
 function viewInbox() {
   const nw = S.bookings.filter(b => b.status === 'new').sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
   const done = S.bookings.filter(b => (b.status === 'accepted' || b.status === 'declined') && b.source === 'website').sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 5);
   const card = b => {
     const opts = b.barber === 'Anyone' || !b.barber ? `<label class="l">Give it to<select data-pick="${esc(b.id)}">${teamOn(b.date).map(x => `<option>${esc(x.name)}</option>`).join('') || '<option value="">Nobody working that day</option>'}</select></label>` : '';
-    return `<div class="req"><div><b>${esc(b.name)}</b> <span class="fine">${esc(b.phone)}</span></div>
+    const old = oldOf(b), mv = old ? `<p class="fine"><b>Wants to move</b> from ${niceDate(old.date)} at ${E.tLabel(old.time)}. Accepting cancels the old time.</p>` : '';
+    return `<div class="req"><div><b>${esc(b.name)}</b> <span class="fine">${esc(b.phone)}</span></div>${mv}
       <p>${esc(b.service)} · ${niceDate(b.date)} at ${E.tLabel(b.time)} · asked for ${b.barber && b.barber !== 'Anyone' ? esc(b.barber) : 'anyone'}</p>
       <p class="fine">${b.consent ? 'Agreed to text reminders.' : 'No text consent. Do not text.'} Nothing is booked until you accept.</p>${opts}
       <div class="row"><button class="btn small" type="button" data-a="accept" data-id="${esc(b.id)}">Accept</button><button class="btn ghost small" type="button" data-a="decline" data-id="${esc(b.id)}">Decline</button></div></div>`;
@@ -381,8 +384,21 @@ function viewCustomers() {
     const st = c.stop ? 'unsubscribed' : c.consent === 'none' ? 'no consent' : c.consent === 'express' ? 'said yes to texts' : 'implied consent (' + c.basis + ')' + (why ? ' · expired' : '');
     return `<div class="ap"><div><b>${esc(c.name)}</b><small>${st}${c.apptDay !== null ? ' · appointment ' + niceDate(E.dayIso(c.apptDay)) : ''}${c.id.startsWith('bk-') ? (c.barber ? ' · ' + esc(c.barber) : '') : c.id.startsWith('ld') ? ' · ' + (c.status === 'missed' ? 'missed call' : 'inquiry') : ' · made up'}</small></div>${c.stop ? '' : `<button type="button" class="link" data-a="stop" data-id="${esc(c.id)}">Replies STOP</button>`}</div>`;
   }).join('');
-  return `<div><h3>Customers</h3><p>Everyone with an accepted appointment, plus anyone you log below.</p></div>
-  <div class="card"><h4>Customer list</h4>${people || '<p>No customers yet. Accept a request and they appear here.</p>'}</div>
+  const q = (S.pq || '').trim().toLowerCase(), pr = E.profiles(S.eng, S.bookings, today).filter(p => !q || p.name.toLowerCase().includes(q) || p.phone.includes(q.replace(/\D/g, '') || '~'));
+  const ago = d => { const n = today - d; return n <= 0 ? 'today' : n === 1 ? 'yesterday' : n < 14 ? n + ' days ago' : n < 70 ? Math.round(n / 7) + ' weeks ago' : Math.round(n / 30) + ' months ago'; };
+  const prof = p => { const open = S.openP === p.key;
+    const head = `<button type="button" class="prow" data-a="openp" data-id="${esc(p.key)}" aria-expanded="${open}"><span class="av">${esc((p.name || '?').charAt(0).toUpperCase())}</span><span class="pmain"><b>${esc(p.name)}</b><small>${p.count} visit${p.count === 1 ? '' : 's'}${p.last ? ' · last ' + ago(p.last.day) : ''}${p.usual ? ' · usually ' + esc(p.usual) : ''}</small></span>${p.next ? '<span class="tag warn">Next ' + niceDate(p.next.date) + '</span>' : ''}${p.note ? '<span class="tag">Note</span>' : ''}</button>`;
+    if (!open) return `<div class="pcard">${head}</div>`;
+    const hist = p.upcoming.concat(p.visits).slice(0, 12).map(v => `<li><span>${niceDate(v.date)} · ${E.tLabel(v.time)}</span><span>${esc(v.service || 'Appointment')}${v.barber ? ' · ' + esc(v.barber) : ''}${v.day >= today ? ' · <em>coming up</em>' : ''}</span></li>`).join('');
+    return `<div class="pcard open">${head}<div class="pbody">
+      <div class="pfacts"><div><small>Phone</small><b>${esc(p.phone || 'not given')}</b></div><div><small>Customer since</small><b>${p.since ? niceDate(p.since) : 'New customer'}</b></div><div><small>Usual</small><b>${esc(p.usual || '-')}${p.usualBarber ? ' with ' + esc(p.usualBarber) : ''}</b></div><div><small>No-shows</small><b>${p.noshows}</b></div></div>
+      <label class="l">Your notes about ${esc(p.name)}<textarea id="pn" maxlength="500" rows="3" placeholder="Usual: skin fade, number 2 on the sides. Likes a quiet chair.">${esc(p.note)}</textarea></label>
+      <div class="row"><button class="btn small" type="button" data-a="savenote" data-id="${esc(p.key)}">Save note</button>${p.note ? `<button class="btn small ghost" type="button" data-a="delnote" data-id="${esc(p.key)}">Clear note</button>` : ''}</div>
+      <h5 class="phh">History</h5><ul class="phist">${hist || '<li><span>No visits yet.</span></li>'}</ul></div></div>`; };
+  return `<div><h3>Customers</h3><p>Everyone with an accepted appointment, with their history and your private notes.</p></div>
+  <div class="card"><h4>Client profiles (${pr.length})</h4><label class="l">Find a customer<input type="search" id="pq" value="${esc(S.pq || '')}" placeholder="Name or phone" autocomplete="off"></label>
+    ${pr.length ? pr.map(prof).join('') : '<p>' + (q ? 'Nobody matches that.' : 'No customers yet. Accept a request and they appear here.') + '</p>'}</div>
+  <div class="card"><h4>Text-message status</h4><p class="fine">Who has agreed to texts, and who has replied STOP.</p>${people || '<p>No customers yet.</p>'}</div>
   <div class="two"><div class="card"><div><h4>Log a missed call or an inquiry</h4><p class="fine">Someone called and nobody answered, or asked a question. The Engine writes the text-back by itself (and a follow-up two days later for an inquiry).</p></div>
     <div class="form2"><label class="l">Name<input type="text" id="ln" maxlength="24" placeholder="First name"></label><label class="l">Phone<input type="tel" id="lp" maxlength="20" placeholder="905 555 0100"></label><label class="l">What happened<select id="lt">${opt([['missed', 'Missed call'], ['inquiry', 'Inquiry (message, DM or form)']])}</select></label></div>
     <div class="row"><button class="btn small" type="button" data-a="addlead">Log it</button></div></div>
@@ -481,6 +497,7 @@ const ACT = {
     const pick = document.querySelector(`[data-pick="${CSS.escape(id)}"]`);
     if (pick) { if (!pick.value) return err('Nobody is working that day. Decline it or change the team days.'); patch.barber = pick.value; }
     await updateBooking(id, patch);
+    const old = b && oldOf(b); if (old) await updateBooking(old.id, { status: 'cancelled' });
   },
   decline: async (_, el) => { await updateBooking(el.dataset.id, { status: 'declined' }); },
   cancel: async (_, el) => {
@@ -538,6 +555,9 @@ const ACT = {
   declineAll: () => { const n = E.decide(S.eng, 'declined'); S.eng.msg = `${n} drafts declined.`; engSave(); },
   stop: (_, el) => { const c = E.stop(S.eng, S.bookings, el.dataset.id); if (c) { S.eng.msg = c.name + ' replied STOP. No more messages to them.'; engSave(); } },
   addlead: () => { const today = E.dayNum(todayIso()) + S.eng.sim, c = E.addLead(S.eng, today, $('#ln').value.trim(), $('#lp').value, $('#lt').value); engAuto(false); S.eng.msg = c.name + ' logged. The Engine picked it up by itself.'; engSave(); },
+  openp: (_, el) => { S.openP = S.openP === el.dataset.id ? '' : el.dataset.id; },
+  savenote: (_, el) => { const k = el.dataset.id; E.setNote(S.eng, k, ($('#pn') || {}).value); S.dirty['del.' + k] = !S.eng.notes[k] ? 1 : 0; if (!S.dirty['del.' + k]) delete S.dirty['del.' + k]; S.eng.msg = 'Note saved.'; engSave(); },
+  delnote: (_, el) => { const k = el.dataset.id; E.setNote(S.eng, k, ''); S.dirty['del.' + k] = 1; S.eng.msg = 'Note cleared.'; engSave(); },
   addtest: () => { const today = E.dayNum(todayIso()) + S.eng.sim; E.addTest(S.eng, today, $('#tn').value.trim(), $('#tc').value, $('#te').value); engAuto(false); engSave(); }
 };
 
@@ -555,6 +575,7 @@ document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && S.menu) 
 const formVal = i => i.type === 'checkbox' ? i.checked : (i.type === 'time' ? toMin(i.value) : i.value);
 document.addEventListener('input', ev => {
   const t = ev.target;
+  if (t.id === 'pq') { S.pq = t.value; const pos = t.selectionStart; render(); const n = document.getElementById('pq'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } return; }
   if (t.dataset && t.dataset.f) {
     S.form[t.dataset.f] = formVal(t);
   }

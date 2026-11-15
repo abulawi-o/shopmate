@@ -1,0 +1,98 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your appointment</title><meta name="robots" content="noindex"><link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.mg{max-width:520px;margin:0 auto;padding:22px max(16px,env(safe-area-inset-left)) 48px}
+.mg h1{font:800 26px/1.15 var(--display);margin:6px 0 4px;letter-spacing:-.02em}
+.mg .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px;margin:16px 0}
+.mg dl{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:0}.mg dt{color:var(--muted)}.mg dd{margin:0;font-weight:700;text-align:right}
+.mg .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.mg .row .btn{flex:1 1 150px}
+.mg .tag{display:inline-block;border-radius:999px;padding:3px 12px;font-weight:700;font-size:13px;background:var(--soft);color:var(--accent)}
+.mg .tag.bad{background:var(--dangersoft);color:var(--danger)}.mg .tag.ok{background:var(--oksoft);color:var(--ok)}
+.mg .note{color:var(--muted);font-size:14px;margin:8px 0 0}
+.mg .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-top:12px}
+.mg .slot{min-height:44px;border:1px solid var(--field);background:#fff;border-radius:12px;font:700 15px var(--sans);cursor:pointer;color:var(--fg)}
+.mg .slot[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.mg input[type=date]{min-height:44px;border:1px solid var(--field);border-radius:12px;padding:0 12px;font:600 16px var(--sans);width:100%}
+.mg label{font-weight:700;font-size:14px}.mg .err{color:var(--danger);font-weight:600;margin-top:10px}
+.mg .demo{background:var(--warn);border-radius:12px;padding:8px 12px;font-weight:600;font-size:14px;margin-bottom:10px}
+.mg .brand{color:var(--muted);font-size:13px;text-align:center;margin-top:26px}
+</style></head>
+<body><main class="mg" id="app" aria-live="polite"><p>Loading…</p></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+(function(){
+var qs=new URLSearchParams(location.search),T=(qs.get('t')||'').trim(),DEMO=T==='demo';
+var app=document.getElementById('app'),B=null,sel={d:'',m:null},step='view',msg='',busy=false;
+var DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function tl(m){var h=Math.floor(m/60),mm=m%60,ap=h>=12?'pm':'am';h=h%12||12;return h+':'+(mm<10?'0':'')+mm+' '+ap}
+function pd(s){var p=s.split('-').map(Number),d=new Date(p[0],p[1]-1,p[2]);return d}
+function nd(s){var d=pd(s);return DAYS[(d.getDay()+6)%7]+', '+MON[d.getMonth()]+' '+d.getDate()}
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function demoBooking(){var d=new Date();d.setDate(d.getDate()+5);return {shop:'Demo Barbershop',address:'123 Sample St',phone:'905 555 0100',name:'Sample Customer',service:'Haircut',barber:'Anyone',date:iso(d),time:600,end_time:630,status:'accepted',can_change:true,hours:{start:540,end:1080,days:[true,true,true,true,true,true,false]},pending:null}}
+async function load(){
+  if(DEMO){B=demoBooking();return}
+  if(!T||!window.supabase){B=null;return}
+  try{var c=supabase.createClient(LEO.url,LEO.key,{auth:{persistSession:false,autoRefreshToken:false}});
+    var r=await c.rpc('booking_manage_get',{t:T});B=r.error?null:r.data;window.__c=c}catch(e){B=null}
+}
+async function rpc(fn,args){
+  if(DEMO)return {ok:false,demo:true};
+  try{var r=await window.__c.rpc(fn,args);return r.error?{ok:false,error:'network'}:r.data}catch(e){return {ok:false,error:'network'}}
+}
+function errText(e){return {'too-late':'This appointment is too close to change online. Please call the shop.','closed-day':'The shop is closed that day. Pick another day.','outside-hours':'That time is outside opening hours.','bad-time':'That time is not available. Pick another.','closed':'This appointment can no longer be changed online.','not-found':'We could not find this appointment.',network:'Could not reach the server. Nothing was changed. Please try again or call the shop.'}[e]||'Something went wrong. Nothing was changed. Please call the shop.'}
+function head(){return (DEMO?'<div class="demo">Sample page. Nothing here is saved.</div>':'')+'<h1>Your appointment</h1><p class="note" style="margin:0">'+esc(B.shop)+(B.address?' · '+esc(B.address):'')+'</p>'}
+function foot(){return '<p class="brand" translate="no">Powered by Shopmate</p>'}
+function summary(){
+  var st=B.status==='cancelled'?'<span class="tag bad">Cancelled</span>':B.status==='accepted'?'<span class="tag ok">Confirmed</span>':'<span class="tag">Waiting for the shop</span>';
+  return '<div class="card"><p style="margin:0 0 12px">'+st+'</p><dl><dt>Name</dt><dd>'+esc(B.name)+'</dd><dt>Service</dt><dd>'+esc(B.service||'Appointment')+'</dd>'+(B.barber&&B.barber!=='Anyone'?'<dt>With</dt><dd>'+esc(B.barber)+'</dd>':'')+'<dt>When</dt><dd>'+esc(nd(B.date))+' · '+tl(B.time)+'</dd></dl></div>';
+}
+function render(){
+  if(!B){app.innerHTML='<h1>Link not found</h1><div class="card"><p style="margin:0">This link is not valid or has expired. Please call the shop to change your appointment.</p></div>'+foot();return}
+  var h=head()+summary();
+  if(step==='done'){h+='<div class="card"><p style="margin:0;font-weight:700">'+esc(msg)+'</p></div>'}
+  else if(B.status==='cancelled'||B.status==='declined'){h+='<p class="note">This appointment is cancelled. To book again, contact '+esc(B.shop)+(B.phone?' on '+esc(B.phone):'')+'.</p>'}
+  else if(!B.can_change){h+='<div class="card"><p style="margin:0">This appointment starts soon or has passed, so it cannot be changed online. Please call '+esc(B.shop)+(B.phone?' on <b>'+esc(B.phone)+'</b>':'')+'.</p></div>'}
+  else{
+    if(B.pending)h+='<div class="card"><p style="margin:0"><b>Change requested:</b> '+esc(nd(B.pending.date))+' · '+tl(B.pending.time)+'.<br>Your original time stays booked until the shop confirms the new one.</p></div>';
+    if(step==='view')h+='<div class="row"><button class="btn" data-a="pick">Pick a new time</button><button class="btn danger" data-a="cancel1">Cancel appointment</button></div><p class="note">You can change or cancel up to 2 hours before.</p>';
+    if(step==='cancel')h+='<div class="card"><p style="margin:0 0 4px;font-weight:700">Cancel this appointment?</p><p class="note" style="margin:0">The shop will be told and the time opens up for someone else.</p><div class="row"><button class="btn danger" data-a="cancel2"'+(busy?' disabled':'')+'>Yes, cancel it</button><button class="btn ghost" data-a="back">Keep it</button></div></div>';
+    if(step==='pick')h+=pickUI();
+    if(msg&&step!=='done')h+='<p class="err" role="alert">'+esc(msg)+'</p>';
+  }
+  app.innerHTML=h+foot();
+}
+function pickUI(){
+  var hr=B.hours||{start:540,end:1080,days:[1,1,1,1,1,1,0]},now=new Date(),min=new Date(now.getFullYear(),now.getMonth(),now.getDate()),max=new Date(min);max.setDate(max.getDate()+60);
+  var u='<div class="card"><label for="nd">New day</label><input type="date" id="nd" value="'+esc(sel.d)+'" min="'+iso(min)+'" max="'+iso(max)+'">';
+  if(sel.d){var d=pd(sel.d),open=hr.days[(d.getDay()+6)%7];
+    if(!open)u+='<p class="note">Closed on '+DAYS[(d.getDay()+6)%7]+'. Pick another day.</p>';
+    else{var dur=(B.end_time||B.time+30)-B.time,s='',t=hr.start,lead=(sel.d===iso(min))?(now.getHours()*60+now.getMinutes()+120):0;
+      for(;t+dur<=hr.end;t+=30){if(t<lead)continue;s+='<button class="slot" aria-pressed="'+(sel.m===t)+'" data-t="'+t+'">'+tl(t)+'</button>'}
+      u+=s?'<div class="slots" role="group" aria-label="Times">'+s+'</div>':'<p class="note">No times left that day. Pick another day.</p>'}}
+  u+='<div class="row"><button class="btn" data-a="send"'+(sel.d&&sel.m!=null&&!busy?'':' disabled')+'>Send change request</button><button class="btn ghost" data-a="back">Back</button></div><p class="note">The shop confirms the new time. Times shown follow opening hours; the shop checks availability.</p></div>';
+  return u;
+}
+app.addEventListener('click',async function(e){
+  var t=e.target.closest('[data-t]');if(t){sel.m=Number(t.dataset.t);msg='';render();return}
+  var b=e.target.closest('[data-a]');if(!b)return;var a=b.dataset.a;msg='';
+  if(a==='pick'){step='pick'}
+  else if(a==='back'){step='view';sel={d:'',m:null}}
+  else if(a==='cancel1'){step='cancel'}
+  else if(a==='cancel2'){
+    if(DEMO){msg='Sample page: nothing was cancelled.';step='view'}
+    else{busy=true;render();var r=await rpc('booking_cancel',{t:T});busy=false;
+      if(r&&r.ok){B.status='cancelled';step='done';msg='Your appointment is cancelled. The shop has been told.'}else{step='view';msg=errText(r&&r.error)}}}
+  else if(a==='send'){
+    if(DEMO){msg='Sample page: nothing was sent.';step='pick'}
+    else{busy=true;render();var r2=await rpc('booking_reschedule',{t:T,d:sel.d,m:sel.m});busy=false;
+      if(r2&&r2.ok){B.pending={date:sel.d,time:sel.m};step='done';msg='Request sent. Your original time stays booked until the shop confirms the new one.'}else{step='pick';msg=errText(r2&&r2.error)}}}
+  render();
+});
+app.addEventListener('change',function(e){if(e.target.id==='nd'){sel.d=e.target.value;sel.m=null;msg='';render()}});
+load().then(render);
+})();
+</script></body></html>

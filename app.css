@@ -228,3 +228,27 @@ details.faq[open] summary::after{content:'\2212'}
 details.faq p{margin:0 0 12px}
 .reply{border-left:3px solid var(--accent);background:var(--soft);padding:10px 12px;border-radius:0 10px 10px 0;margin-top:8px}
 .tag.ok{background:var(--soft);color:var(--accent)}
+
+/* client profiles */
+.pcard{border-top:1px solid var(--line)}
+.prow{width:100%;display:flex;align-items:center;gap:12px;background:none;border:0;padding:12px 0;text-align:left;cursor:pointer;color:inherit;font:inherit;min-height:56px}
+.prow:hover .pmain b{text-decoration:underline}
+.prow .pmain{flex:1;min-width:0;display:flex;flex-direction:column}
+.prow .pmain small{color:var(--muted,#6b7280);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard.open{background:var(--soft);border-radius:14px;padding:0 14px 14px;margin:6px -14px}
+.pbody{display:flex;flex-direction:column;gap:12px}
+.pfacts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.pfacts div{background:var(--panel);border-radius:10px;padding:10px 12px;min-width:0}
+.pfacts small{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted,#6b7280)}
+.pfacts b{font-size:14px;overflow-wrap:anywhere}
+.pbody textarea{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:inherit;resize:vertical;min-height:84px}
+.phh{margin:6px 0 0;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.phist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.phist li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.phist li span:last-child{text-align:right}
+@media(max-width:560px){.pfacts{grid-template-columns:1fr 1fr}.phist li{flex-direction:column;gap:2px}.phist li span:last-child{text-align:left}.prow .tag{display:none}}
+
+.prow .av{flex:none;width:38px;height:38px;border-radius:50%;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-weight:800}
+.pcard.open .prow .av{background:var(--panel)}
+#pq{width:100%;font:inherit;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:inherit;min-height:46px}
+#pq:focus,.pbody textarea:focus{outline:2px solid var(--accent);outline-offset:1px}

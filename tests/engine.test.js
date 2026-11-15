@@ -103,3 +103,25 @@ t('STOP in a reply blocks every later draft to that customer', () => {
   assert.ok(st.outbox.filter(m => m.contact === c.id).every(m => m.status === 'blocked'));
 });
 console.log('\n' + n + ' tests passed');
+
+t('client profile: groups visits by phone, finds usual service and next visit', () => {
+  const st = E.normalize(null);
+  const a = bk('1', '2026-10-01', 600, { name: 'Jordan', phone: '9055550001', service: 'Fade', barber: 'Alex' }), b = bk('2', '2026-10-20', 600, { name: 'Jordan', phone: '(905) 555-0001', service: 'Fade', barber: 'Alex' });
+  const c = bk('3', '2026-11-13', 660, { name: 'Jordan', phone: '9055550001', service: 'Beard trim', barber: 'Alex' }), d = bk('4', '2026-10-05', 600, { name: 'Priya', phone: '9055550002', service: 'Haircut' });
+  const e = bk('5', '2026-11-12', 600, { name: 'Ghost', phone: '9055550003', status: 'declined' });
+  const p = E.profiles(st, [a, b, c, d, e], TODAY);
+  assert.strictEqual(p.length, 2); const j = p.find(x => x.name === 'Jordan');
+  assert.strictEqual(j.count, 3); assert.strictEqual(j.usual, 'Fade'); assert.strictEqual(j.usualBarber, 'Alex');
+  assert.strictEqual(j.next.date, '2026-11-13'); assert.strictEqual(j.last.date, '2026-10-20'); assert.strictEqual(j.since, '2026-10-01');
+  assert.strictEqual(p[0].name, 'Jordan', 'people with an upcoming visit come first');
+});
+t('client profile: notes save, clear, and survive normalize', () => {
+  const st = E.normalize({ outbox: [] }); assert.deepStrictEqual(st.notes, {});
+  E.setNote(st, '9055550001', '  Usual: skin fade  ', 123); assert.strictEqual(st.notes['9055550001'].text, 'Usual: skin fade');
+  const p = E.profiles(st, [bk('1', '2026-10-01', 600, { phone: '9055550001' })], TODAY); assert.strictEqual(p[0].note, 'Usual: skin fade');
+  E.setNote(st, '9055550001', '   '); assert.strictEqual(st.notes['9055550001'], undefined);
+});
+t('client profile: a no-show is counted but not as a visit', () => {
+  const st = E.normalize(null), b = bk('6', '2026-11-11', 600, { phone: '9055550006' }); E.markNoShow(st, [b], '6', TODAY);
+  const p = E.profiles(st, [b], TODAY)[0]; assert.strictEqual(p.noshows, 1); assert.strictEqual(p.visits.length, 0);
+});
