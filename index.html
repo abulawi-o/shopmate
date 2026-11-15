@@ -68,6 +68,7 @@ async function boot() {
   const app = $('#app');
   // which shop is this? the shop ID if given (?shop= or config.js), otherwise the domain name the visitor came to
   const { data, error } = shopId ? await sb.rpc('site_info', { s: shopId }) : await sb.rpc('site_info_domain', { d: location.hostname });
+  if ((error || !data) && !shopId && /\.github\.io$/.test(location.hostname) && location.pathname.replace(/index\.html$/, '').replace(/\/+$/, '').split('/').length <= 2) { location.replace('home.html'); return; }
   if (error || !data) { app.innerHTML = '<p style="text-align:center;margin-top:25vh">This website is not available right now.</p>'; return; }
   INFO = data; C = data.content || {}; SHOP = data.id || shopId;
   document.title = data.name;
