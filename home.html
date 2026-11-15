@@ -130,7 +130,7 @@ void main(){
   tint=mix(tint,vec3(.78,.62,.78),.3*fi);
   au+=tint*band*streak*(.5-.1*fi)*fall;
  }
- col+=au;
+ au=vec3(1.)-exp(-au*1.8); col+=au*.85;
  // soft vignette top only
  col*=1.-.35*smoothstep(.55,1.,uv.y)*0.0;
  gl_FragColor=vec4(col,1.);
@@ -145,7 +145,7 @@ addEventListener('scroll',sy,{passive:true});
 var vis=true;document.addEventListener('visibilitychange',function(){vis=!document.hidden});
 var st=/[?&]static/.test(location.search),t0=performance.now();
 function f(){requestAnimationFrame(f);if(!vis)return;mx+=(tx-mx)*.04;my+=(ty-my)*.04;U.m.value.set(mx,my);
- U.t.value=(reduce||st)?12.:(performance.now()-t0)/1000;sy();R.render(sc,cam)}
+ U.t.value=(reduce||st)?(parseFloat((location.search.match(/[?&]t=([\d.]+)/)||[])[1])||12.):(performance.now()-t0)/1000;sy();R.render(sc,cam)}
 f();window.__ready=1;
 })();
 </script>
